@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tasks - AAF Admin</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+    <!-- ===== নেভিগেশন ===== -->
+    <nav class="admin-nav">
+        <a href="/admin/dashboard">🏠 Dashboard</a>
+        <a href="/admin/tasks" class="active">📋 Tasks</a>
+        <a href="/admin/trading">📈 Trading</a>
+        <a href="/admin/wallet">💰 Wallet</a>
+        <a href="/admin/account">👥 Account</a>
+        <button onclick="logout()" style="background:red; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">🚪 Logout</button>
+    </nav>
+
+    <!-- ===== কন্টেন্ট ===== -->
+    <div class="admin-content" style="padding:20px;">
+
+            <!-- নতুন টেলিগ্রাম টাস্ক -->
+            <div class="premium-card">
+                <div class="card-title"><i class="fas fa-plus-circle"></i> নতুন টেলিগ্রাম টাস্ক</div>
+                <input type="text" id="task_title" placeholder="টাস্কের শিরোনাম">
+                <select id="task_type">
+                    <option value="telegram_channel">📢 টেলিগ্রাম চ্যানেল জয়েন</option>
+                    <option value="telegram_deeplink">🔗 টেলিগ্রাম ডিপ লিংক</option>
+                </select>
+                <input type="text" id="task_link" placeholder="চ্যানেল ইউজারনেম বা বট ডিপ লিংক">
+                <div class="row">
+                    <input type="number" id="task_reward" placeholder="পুরস্কার">
+                    <select id="task_currency">
+                        <option value="bdt">BDT (টাকা)</option>
+                        <option value="aaf">AAF (কয়েন)</option>
+                    </select>
+                </div>
+                <input type="number" id="task_max_users" placeholder="সর্বোচ্চ ব্যবহারকারী (০ = আনলিমিটেড)" value="0">
+                <input type="number" id="task_timer" placeholder="টাইমার (সেকেন্ড)" value="0">
+                <input type="number" id="task_expiry_hours" placeholder="মেয়াদ (ঘণ্টা)">
+                <div class="card-title" style="font-size:14px; margin-top:15px;">
+                    <i class="fas fa-shield-alt"></i> ভেরিফিকেশন
+                </div>
+                <div class="row">
+                    <div>
+                        <label>ডিভাইস চেক</label>
+                        <select id="task_device_check">
+                            <option value="true">✅ চালু</option>
+                            <option value="false">❌ বন্ধ</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>আইপি চেক</label>
+                        <select id="task_ip_check">
+                            <option value="true">✅ চালু</option>
+                            <option value="false">❌ বন্ধ</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>অ্যাকাউন্ট চেক</label>
+                        <select id="task_account_check">
+                            <option value="true">✅ চালু</option>
+                            <option value="false">❌ বন্ধ</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn-main" data-action="create-task">📌 টাস্ক তৈরি</button>
+            </div>
+
+            <!-- টাস্ক লিস্ট -->
+            <div class="premium-card">
+                <div class="card-title"><i class="fas fa-list-ul"></i> টেলিগ্রাম টাস্ক লিস্ট</div>
+                <div id="admin-task-list">লোড হচ্ছে...</div>
+            </div>
+
+            <!-- গ্লোবাল সেটিংস -->
+            <div class="premium-card">
+                <div class="card-title"><i class="fas fa-cog"></i> গ্লোবাল সেটিংস</div>
+                <div class="row">
+                    <div>
+                        <label>ডিফল্ট মেয়াদ (ঘণ্টা)</label>
+                        <input type="number" id="global_default_expiry" value="168">
+                    </div>
+                    <div>
+                        <label>আইপি লিমিট (ঘণ্টা প্রতি)</label>
+                        <input type="number" id="global_ip_limit" value="5">
+                    </div>
+                </div>
+                <button class="btn-main" data-action="save-global-defaults">সংরক্ষণ</button>
+            </div>
+
+            <!-- মাইলস্টোন -->
+            <div class="premium-card">
+                <div class="card-title"><i class="fas fa-flag-checkered"></i> টেলিগ্রাম টাস্ক মাইলস্টোন</div>
+                <div class="row">
+                    <div><label>টার্গেট</label><input type="number" id="ms_target"></div>
+                    <div>
+                        <label>রিওয়ার্ড টাইপ</label>
+                        <select id="ms_reward_type">
+                            <option value="bdt">BDT</option>
+                            <option value="aaf">AAF</option>
+                        </select>
+                    </div>
+                    <div><label>পরিমাণ</label><input type="number" id="ms_reward_amount" step="0.01"></div>
+                </div>
+                <div class="row">
+                    <div><label>মেয়াদ (দিন)</label><input type="number" id="ms_days"></div>
+                    <div>
+                        <label>টাইপ</label>
+                        <select id="ms_type">
+                            <option value="task">টাস্ক</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>সক্রিয়</label>
+                        <select id="ms_active">
+                            <option value="true">হ্যাঁ</option>
+                            <option value="false">না</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn-main" data-action="save-milestone">📌 মাইলস্টোন সেভ</button>
+                <div id="milestone-list">লোড হচ্ছে...</div>
+            </div>
+
+            <!-- অর্ডার রেট -->
+            <div class="premium-card">
+                <div class="card-title"><i class="fas fa-chart-line"></i> টাস্ক অর্ডার সার্ভিস রেট</div>
+                <div class="row">
+                    <div>
+                        <label>📊 প্রিমিয়াম ফলোয়ার</label>
+                        <input type="number" id="rate_followers" step="0.01" placeholder="0.20">
+                    </div>
+                    <div>
+                        <label>👥 প্রিমিয়াম মেম্বার</label>
+                        <input type="number" id="rate_members" step="0.01" placeholder="0.15">
+                    </div>
+                </div>
+                <div class="row">
+                    <div>
+                        <label>👁️ প্রিমিয়াম ভিউ</label>
+                        <input type="number" id="rate_views" step="0.01" placeholder="0.05">
+                    </div>
+                    <div>
+                        <label>❤️ প্রিমিয়াম লাইক</label>
+                        <input type="number" id="rate_likes" step="0.01" placeholder="0.10">
+                    </div>
+                </div>
+                <div class="row">
+                    <div>
+                        <label>💬 প্রিমিয়াম কমেন্ট</label>
+                        <input type="number" id="rate_comments" step="0.01" placeholder="0.50">
+                    </div>
+                </div>
+                <button class="btn-main" data-action="save-order-rates">💾 সার্ভিস রেট সেভ করুন</button>
+            </div>
+
+        </div> <!-- task শেষ -->
+
+    </div> <!-- admin-content শেষ -->
+
+    <!-- ============================================================ -->
+    <!-- ✅ JavaScript (Tasks এর জন্য) -->
+    <!-- ============================================================ -->
+    <script>
+        const API = window.location.origin;
+
+        // ========== 1. সব data-action হ্যান্ডেল করুন ==========
+        document.addEventListener('click', function(e) {
+            const target = e.target.closest('[data-action]');
+            if (!target) return;
+
+            const action = target.dataset.action;
+            const id = target.dataset.id || '';
+
+            switch(action) {
+                case 'create-task':
+                    createNewTask();
+                    break;
+                case 'save-global-defaults':
+                    saveGlobalDefaults();
+                    break;
+                case 'save-milestone':
+                    saveMilestone();
+                    break;
+                case 'save-order-rates':
+                    saveOrderRates();
+                    break;
+                case 'toggle-task':
+                    toggleTask(id);
+                    break;
+                case 'delete-task':
+                    deleteTask(id);
+                    break;
+                default:
+                    console.warn('Unknown action:', action);
+            }
+        });
+
+        // ========== 2. লগআউট ==========
+        function logout() {
+            if(confirm('Are you sure?')) {
+                fetch('/api/admin/logout', { method: 'POST' })
+                .then(() => window.location.href = '/admin/login');
+            }
+        }
+
+        // ========== 3. টাস্ক তৈরি ==========
+        function createNewTask() {
+    const title = document.getElementById('task_title').value.trim();
+    const link = document.getElementById('task_link').value.trim();
+    const type = document.getElementById('task_type').value;
+    const reward = document.getElementById('task_reward').value;
+    const currency = document.getElementById('task_currency').value;
+    const expiry = document.getElementById('task_expiry_hours').value;
+    const timer = document.getElementById('task_timer').value;
+    const max_users = document.getElementById('task_max_users').value;  // 👈 max_users নিন
+    const device_check = document.getElementById('task_device_check').value === 'true';
+    const ip_check = document.getElementById('task_ip_check').value === 'true';
+    const account_check = document.getElementById('task_account_check').value === 'true';
+
+    if (!title) return alert('টাস্কের শিরোনাম দিন');
+    if (!link) return alert('লিংক দিন');
+    if (!reward || reward <= 0) return alert('সঠিক পুরস্কার পরিমাণ দিন');
+
+    const taskData = {
+        title, type, link,
+        reward: parseFloat(reward),
+        currency,
+        expiry_hours: expiry ? parseInt(expiry) : null,
+        timer: parseInt(timer) || 30,
+        max_users: parseInt(max_users) || 0,  // 👈 max_users যোগ করুন
+        verification: { device_check, ip_check, account_check }
+    };
+
+    fetch('/api/admin/tasks/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(taskData)
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) {
+            alert('✅ টাস্ক তৈরি হয়েছে!');
+            loadAdminTasks();
+            document.getElementById('task_title').value = '';
+            document.getElementById('task_link').value = '';
+            document.getElementById('task_reward').value = '';
+            document.getElementById('task_timer').value = '';
+            document.getElementById('task_max_users').value = '';  // 👈 max_users রিসেট
+        } else {
+            alert('❌ ' + (d.message || 'টাস্ক তৈরি ব্যর্থ'));
+        }
+    })
+    .catch(e => {
+        alert('❌ সার্ভার এরর');
+        console.error(e);
+    });
+        }
+
+        // ========== 4. টাস্ক লিস্ট লোড ==========
+        function loadAdminTasks() {
+    const container = document.getElementById('admin-task-list');
+    if (!container) return;
+    container.innerHTML = 'লোড হচ্ছে...';
+
+    fetch('/api/admin/tasks/list', { credentials: 'include' })
+    .then(r => r.json())
+    .then(d => {
+        if (!d.tasks || d.tasks.length === 0) {
+            container.innerHTML = '<p style="text-align:center; color:#888;">কোনো টাস্ক নেই</p>';
+            return;
+        }
+
+        let html = '';
+        d.tasks.forEach(task => {
+            const typeLabel = task.type === 'telegram_channel' ? '📢 চ্যানেল জয়েন' : '🤖 ডিপ লিংক';
+            const statusBadge = task.active ? '<span style="color:lime;">✅ সক্রিয়</span>' : '<span style="color:red;">❌ নিষ্ক্রিয়</span>';
+            const userCount = task.current_users || 0;
+            const maxUsers = task.max_users || '∞';
+            const userInfo = task.max_users ? `${userCount}/${maxUsers}` : `${userCount} জন`;
+
+            html += `
+            <div style="background:#1a1a2e; padding:12px; margin-bottom:10px; border-radius:8px; border:1px solid #333;">
+                <strong>${escapeHtml(task.title)}</strong> (${typeLabel})<br>
+                <small>পুরস্কার: ${task.reward} ${(task.currency || 'bdt').toUpperCase()} | ${statusBadge}</small><br>
+                <small>লিংক: ${task.link}</small>
+                <small style="color:#00f2fe;">👥 ${userInfo}</small>
+                <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+                    <!-- ✅ টগল বাটন (সক্রিয়/নিষ্ক্রিয়) -->
+                    <button data-action="toggle-task" data-id="${task.task_id}" 
+                            style="background:#ffaa00; color:#000; border:none; padding:4px 12px; border-radius:4px; cursor:pointer;">
+                        🔄 টগল
+                    </button>
+                    <!-- ✅ রিমুভ বাটন (পুরোপুরি ডিলিট) -->
+                    <button data-action="delete-task" data-id="${task.task_id}" 
+                            style="background:#ff0055; color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer;">
+                        🗑️ রিমুভ
+                    </button>
+                </div>
+            </div>`;
+        });
+        container.innerHTML = html;
+    })
+    .catch(e => {
+        console.error(e);
+        container.innerHTML = '<p style="color:red;">লোড করতে সমস্যা</p>';
+    });
+        }
+
+        function escapeHtml(text) {
+            if (!text) return "";
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ========== 5. টাস্ক টগল ==========
+async function toggleTask(taskId) {
+    try {
+        const res = await fetch(`/api/admin/tasks/toggle/${taskId}`, { 
+            method: 'POST', 
+            credentials: 'include' 
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            showAnimatedNotification(data.message || '✅ স্ট্যাটাস আপডেট হয়েছে', 'success');
+            loadAdminTasks();
+        } else {
+            showAnimatedNotification(data.message || 'টগল করতে ব্যর্থ', 'error');
+        }
+    } catch(e) {
+        showAnimatedNotification('সার্ভার ত্রুটি', 'error');
+        console.error(e);
+    }
+}
+
+// ========== 6. টাস্ক ডিলিট ==========
+async function deleteTask(taskId) {
+    if (!confirm('🚨 টাস্ক পুরোপুরি ডিলিট করতে চান? (পুনরুদ্ধার করা যাবে না!)')) return;
+
+    try {
+        const res = await fetch(`/api/admin/tasks/delete/${taskId}`, { 
+            method: 'DELETE', 
+            credentials: 'include' 
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            showAnimatedNotification(data.message || '🗑️ টাস্ক ডিলিট হয়েছে!', 'success');
+            loadAdminTasks();
+        } else {
+            showAnimatedNotification(data.message || 'ডিলিট ব্যর্থ', 'error');
+        }
+    } catch(e) {
+        showAnimatedNotification('সার্ভার ত্রুটি', 'error');
+        console.error(e);
+    }
+}
+
+
+        // ========== 7. গ্লোবাল সেটিংস ==========
+        function saveGlobalDefaults() {
+            const default_expiry = document.getElementById('global_default_expiry').value;
+            const ip_limit = document.getElementById('global_ip_limit').value;
+
+            fetch('/api/admin/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    default_task_expiry_hours: parseInt(default_expiry) || 168,
+                    ip_claim_limit_per_hour: parseInt(ip_limit) || 5
+                })
+            })
+            .then(r => r.json())
+            .then(d => {
+                alert(d.message || '✅ গ্লোবাল সেটিংস সংরক্ষিত!');
+            })
+            .catch(e => {
+                alert('❌ সেটিংস সেভ করতে সমস্যা হয়েছে');
+                console.error(e);
+            });
+        }
+
+        // ========== 8. মাইলস্টোন ==========
+        function saveMilestone() {
+            const target = document.getElementById('ms_target').value;
+            const reward_type = document.getElementById('ms_reward_type').value;
+            const reward_amount = document.getElementById('ms_reward_amount').value;
+            const days = document.getElementById('ms_days').value;
+            const type = document.getElementById('ms_type').value;
+            const active = document.getElementById('ms_active').value === 'true';
+
+            if (!target || target <= 0) return alert('টার্গেট সংখ্যা দিন');
+            if (!reward_amount || reward_amount <= 0) return alert('রিওয়ার্ড পরিমাণ দিন');
+
+            fetch('/api/admin/milestone/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    target: parseInt(target),
+                    reward_type, reward_amount: parseFloat(reward_amount),
+                    days: days ? parseInt(days) : null,
+                    type, active
+                })
+            })
+            .then(r => r.json())
+            .then(d => {
+                alert(d.message || '✅ মাইলস্টোন সংরক্ষিত');
+                loadMilestones();
+                document.getElementById('ms_target').value = '';
+                document.getElementById('ms_reward_amount').value = '';
+                document.getElementById('ms_days').value = '';
+            })
+            .catch(e => console.error(e));
+        }
+
+        // ========== 9. মাইলস্টোন লিস্ট ==========
+        function loadMilestones() {
+            const container = document.getElementById('milestone-list');
+            fetch('/api/admin/milestones/list', { credentials: 'include' })
+            .then(r => r.json())
+            .then(d => {
+                if (!d.milestones || d.milestones.length === 0) {
+                    container.innerHTML = '<p style="color:#888;">কোনো মাইলস্টোন নেই</p>';
+                    return;
+                }
+                let html = '';
+                d.milestones.forEach(ms => {
+                    html += `<div style="padding:8px; border-bottom:1px solid #333;">
+                        🎯 ${ms.target} টাস্ক → ${ms.reward_amount} ${ms.reward_type.toUpperCase()}
+                        (${ms.active ? '✅ চালু' : '❌ বন্ধ'})
+                        <button data-action="delete-milestone" data-id="${ms._id}" style="float:right; background:red; color:#fff; border:none; padding:2px 10px; border-radius:4px; cursor:pointer;">❌</button>
+                    </div>`;
+                });
+                container.innerHTML = html;
+            })
+            .catch(e => {
+                container.innerHTML = '<p style="color:red;">লোড করতে সমস্যা</p>';
+                console.error(e);
+            });
+        }
+
+        // ========== 10. মাইলস্টোন ডিলিট ==========
+        // ========== ইভেন্ট ডেলিগেশন (সব অ্যাকশন একসাথে) ==========
+      document.addEventListener('click', function(e) {
+    const target = e.target.closest('[data-action]');
+    if (!target) return;
+
+    const action = target.dataset.action;
+    const id = target.dataset.id;
+
+    // ===== টাস্ক অ্যাকশন =====
+    if (action === 'toggle-task') {
+        toggleTask(id);
+    } 
+    else if (action === 'delete-task') {
+        deleteTask(id);
+    }
+
+    // ===== মাইলস্টোন অ্যাকশন =====
+    else if (action === 'delete-milestone') {
+        if (!confirm('মাইলস্টোন ডিলিট করবেন?')) return;
+        fetch('/api/admin/milestone/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ id })
+        })
+        .then(r => r.json())
+        .then(d => {
+            showAnimatedNotification(d.message || '✅ ডিলিট হয়েছে', 'success');
+            loadMilestones();
+        })
+        .catch(e => {
+            showAnimatedNotification('ডিলিট করতে ব্যর্থ', 'error');
+            console.error(e);
+        });
+    }
+});
+
+        // ========== 11. অর্ডার রেট ==========
+        function loadOrderRates() {
+            fetch('/api/admin/order_rates', { credentials: 'include' })
+            .then(r => r.json())
+            .then(data => {
+                if (data.rates) {
+                    document.getElementById('rate_followers').value = data.rates.followers || 0.20;
+                    document.getElementById('rate_members').value = data.rates.members || 0.15;
+                    document.getElementById('rate_views').value = data.rates.views || 0.05;
+                    document.getElementById('rate_likes').value = data.rates.likes || 0.10;
+                    document.getElementById('rate_comments').value = data.rates.comments || 0.50;
+                }
+            })
+            .catch(e => console.log(e));
+        }
+
+        function saveOrderRates() {
+            const rates = {
+                followers: parseFloat(document.getElementById('rate_followers').value) || 0.20,
+                members: parseFloat(document.getElementById('rate_members').value) || 0.15,
+                views: parseFloat(document.getElementById('rate_views').value) || 0.05,
+                likes: parseFloat(document.getElementById('rate_likes').value) || 0.10,
+                comments: parseFloat(document.getElementById('rate_comments').value) || 0.50
+            };
+
+            fetch('/api/admin/order_rates', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(rates)
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) alert('✅ সার্ভিস রেট সেভ হয়েছে!');
+                else alert('❌ সেভ করতে ব্যর্থ');
+            })
+            .catch(e => alert('সার্ভার ত্রুটি'));
+        }
+
+
+        // ========== ক্যাশ ক্লিয়ার ফাংশন ==========
+        async function clearAllCache() {
+    if (!confirm('সব ক্যাশ ক্লিয়ার করতে চান?')) return;
+
+    try {
+        const res = await fetch('/api/admin/clear_cache', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            showAnimatedNotification('🧹 সব ক্যাশ ক্লিয়ার করা হয়েছে!', 'success');
+            loadAdminTasks();  // রিফ্রেশ
+        }
+    } catch(e) {
+        showAnimatedNotification('ক্যাশ ক্লিয়ার করতে ব্যর্থ', 'error');
+    }
+        }
+
+        // ========== 12. পেজ লোড ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAdminTasks();
+            loadMilestones();
+            loadOrderRates();
+        });
+
+        console.log('✅ Tasks JavaScript loaded!');
+    </script>
+
+</body>
+</html>
