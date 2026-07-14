@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Payment History - AAF Master</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        /* পাশাপাশি দুই কলামের স্টাইল */
+        .two-column-payment {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .payment-column {
+            flex: 1;
+            min-width: 280px;
+            background: rgba(13, 17, 28, 0.3);
+            border-radius: 20px;
+            padding: 15px;
+        }
+
+        .section-title {
+            font-family: 'Syncopate';
+            font-size: 14px;
+            color: #00f2fe;
+            margin: 0 0 15px 5px;
+            border-left: 3px solid #00f2fe;
+            padding-left: 10px;
+        }
+
+        .history-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0d111c;
+            border: 1px solid rgba(0, 242, 254, 0.15);
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 12px;
+        }
+
+        .pay-info b {
+            font-size: 18px;
+            color: #00ff88;
+            display: block;
+        }
+
+        .pay-info small {
+            color: #94a3b8;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .pay-status {
+            text-align: right;
+        }
+
+        .st-badge {
+            font-size: 10px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 5px;
+        }
+
+        .status-success { background: rgba(0,255,136,0.15); color: #00ff88; border: 1px solid rgba(0,255,136,0.3); }
+        .status-pending { background: rgba(255,170,0,0.15); color: #ffaa00; border: 1px solid rgba(255,170,0,0.3); }
+        .status-rejected { background: rgba(255,0,85,0.15); color: #ff5555; border: 1px solid rgba(255,0,85,0.3); }
+
+        .trx-id { font-size: 10px; color: #7b8ba3; display: block; }
+        .empty-message { text-align: center; padding: 30px; color: #94a3b8; background: #0d111c; border-radius: 16px; }
+
+        .header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .back-link { color: #fff; text-decoration: none; font-size: 20px; }
+        .title { font-family: 'Syncopate'; font-size: 16px; color: #ffaa00; letter-spacing: 1px; }
+
+        @media (max-width: 768px) {
+            .two-column-payment { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <a href="/dashboard" class="back-link"><i class="fas fa-arrow-left"></i></a>
+    <div class="title">PAYMENT HISTORY</div>
+</div>
+
+<div id="payment-history-container">
+    <div id="loader" style="text-align:center; padding:40px;">
+        <i class="fas fa-circle-notch fa-spin"></i> Loading Data...
+    </div>
+</div>
+
+<script>
+const API = window.location.origin;
+const TG_KEY = "telegram_id";
+
+function getTG(){
+    const id = localStorage.getItem(TG_KEY);
+    if(!id) {
+        console.log("No TG ID found, redirecting to login");
+        location.href = "/login";
+    }
+    return id;
+}
+
+function formatDate(dateStr){
+    if(!dateStr) return 'N/A';
+    let date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+async function loadPaymentHistory(){
+    const tg = getTG();
+    const container = document.getElementById('payment-history-container');
+
+    // লোডিং দেখান
+    container.innerHTML = '<div class="loader" style="text-align:center; padding:40px;"><i class="fas fa-circle-notch fa-spin"></i> Loading Data...</div>';
+
+    try{
+        console.log("Fetching payments for TG:", tg);
+        const res = await fetch(`${API}/api/user/payments/${tg}`, { credentials:"include" });
+        console.log("Response status:", res.status);
+
+        if(!res.ok){
+            throw new Error(`HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        console.log("Payment data:", data);
+
+        let depositsHtml = '';
+        let withdrawsHtml = '';
+
+        // ========== DEPOSITS (বাম কলাম) ==========
+        if(data.deposits && data.deposits.length > 0){
+            data.deposits.forEach(d => {
+                let statusClass = '';
+                let statusText = '';
+                if(d.status === 'approved') {
+                    statusClass = 'status-success';
+                    statusText = '✅ APPROVED';
+                } else if(d.status === 'pending') {
+                    statusClass = 'status-pending';
+                    statusText = '⏳ PENDING';
+                } else if(d.status === 'rejected') {
+                    statusClass = 'status-rejected';
+                    statusText = '❌ REJECTED';
+                } else {
+                    statusClass = 'status-pending';
+                    statusText = '⏳ PENDING';
+                }
+
+                let userTgId = d.telegram_id || d.user_id || 'Unknown';
+
+                depositsHtml += `
+                    <div class="history-card">
+                        <div class="pay-info">
+                            <b>৳ ${parseFloat(d.amount).toFixed(2)}</b>
+                            <small><i class="fab fa-telegram"></i> ${userTgId}</small>
+                            <small style="display:block; font-size:9px;">${d.method || 'Nagad'}</small>
+                        </div>
+                        <div class="pay-status">
+                            <div class="st-badge ${statusClass}">${statusText}</div>
+                            <small class="trx-id">${formatDate(d.created_at)}</small>
+                        </div>
+                    </div>
+                `;
+            });
+        } else {
+            depositsHtml = `<div class="empty-message"><i class="fas fa-inbox"></i> No deposit requests found.</div>`;
+        }
+
+        // ========== WITHDRAWALS (ডান কলাম) ==========
+        if(data.withdraws && data.withdraws.length > 0){
+            data.withdraws.forEach(w => {
+                let statusClass = '';
+                let statusText = '';
+                if(w.status === 'approved') {
+                    statusClass = 'status-success';
+                    statusText = '✅ APPROVED';
+                } else if(w.status === 'pending') {
+                    statusClass = 'status-pending';
+                    statusText = '⏳ PENDING';
+                } else if(w.status === 'rejected') {
+                    statusClass = 'status-rejected';
+                    statusText = '❌ REJECTED';
+                } else {
+                    statusClass = 'status-pending';
+                    statusText = '⏳ PENDING';
+                }
+
+                let userTgId = w.telegram_id || w.user_id || 'Unknown';
+                let mobileNumber = w.number || w.account_number || 'N/A';
+
+                withdrawsHtml += `
+                    <div class="history-card">
+                        <div class="pay-info">
+                            <b>৳ ${parseFloat(w.amount).toFixed(2)}</b>
+                            <small><i class="fab fa-telegram"></i> ${userTgId}</small>
+                            <small style="display:block; font-size:9px;"><i class="fas fa-phone"></i> ${mobileNumber}</small>
+                        </div>
+                        <div class="pay-status">
+                            <div class="st-badge ${statusClass}">${statusText}</div>
+                            <small class="trx-id">${formatDate(w.created_at)}</small>
+                        </div>
+                    </div>
+                `;
+            });
+        } else {
+            withdrawsHtml = `<div class="empty-message"><i class="fas fa-inbox"></i> No withdrawal requests found.</div>`;
+        }
+
+        // দুই কলাম পাশাপাশি লেআউট (DESKTOP)
+        const finalHtml = `
+            <div class="two-column-payment">
+                <div class="payment-column">
+                    <div class="section-title"><i class="fas fa-download"></i> DEPOSIT REQUESTS</div>
+                    ${depositsHtml}
+                </div>
+                <div class="payment-column">
+                    <div class="section-title"><i class="fas fa-upload"></i> WITHDRAWAL REQUESTS</div>
+                    ${withdrawsHtml}
+                </div>
+            </div>
+        `;
+
+        container.innerHTML = finalHtml;
+
+    } catch(e){ 
+        console.error("Payment history error:", e);
+        container.innerHTML = `<div class="empty-message" style="margin:20px;">⚠️ Failed to load data: ${e.message}<br>Please try again later.</div>`;
+    }
+}
+
+window.addEventListener('load', loadPaymentHistory);
+</script>
+</body>
+</html>
