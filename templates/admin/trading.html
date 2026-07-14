@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Trading - AAF Admin</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+    <!-- ===== নেভিগেশন ===== -->
+    <nav class="admin-nav">
+        <a href="/admin/dashboard">🏠 Dashboard</a>
+        <a href="/admin/tasks">📋 Tasks</a>
+        <a href="/admin/trading" class="active">📈 Trading</a>
+        <a href="/admin/wallet">💰 Wallet</a>
+        <a href="/admin/account">👥 Account</a>
+        <button onclick="logout()" style="background:red; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">🚪 Logout</button>
+    </nav>
+
+    <!-- ===== কন্টেন্ট ===== -->
+    <div class="admin-content" style="padding:20px;">
+
+        <!-- ==================== ট্রেডিং ==================== -->
+        <div id="trading" class="page-section active" style="display: block;">
+
+            <!-- মার্কেট প্রাইস কন্ট্রোল -->
+            <div class="premium-card">  
+                <div class="card-title"><i class="fas fa-coins"></i> মার্কেট প্রাইস কন্ট্রোল</div>  
+                <h1 id="live-price-display" style="text-align:center; color:var(--cyan); font-size:45px; margin:10px 0;">৳ ০.০০</h1>  
+                <input type="number" id="inp-price" step="0.01" placeholder="নতুন মার্কেট প্রাইস সেট করুন">  
+                <button class="btn-main" data-action="force-market-price">প্রাইস ফিক্সড করুন</button>  
+            </div>  
+
+            <!-- ট্রেডিং ফি সেটিংস -->
+            <div class="premium-card">  
+                <div class="card-title"><i class="fas fa-percentage"></i> ট্রেডিং ফি সেটিংস</div>  
+                <input type="number" id="c-fee" placeholder="ফি কত % কাটবে?">  
+                <button class="btn-main" data-action="set-global-fee">ফি আপডেট</button>  
+            </div>    
+
+            <!-- মার্কেট ভোলাটিলিটি কন্ট্রোল -->
+            <div class="premium-card">
+                <div class="card-title"><i class="fas fa-chart-line"></i> মার্কেট ভোলাটিলিটি কন্ট্রোল</div>
+                <div>
+                    <label>📈 ট্রেড ইমপ্যাক্ট ফ্যাক্টর</label>
+                    <input type="number" id="trade_impact_factor" step="0.00001" value="0.0001">
+                </div>
+                <div>
+                    <label>🎲 প্রাইস ভোলাটিলিটি</label>
+                    <input type="number" id="price_volatility" step="0.0001" value="0.0005">
+                </div>
+                <div style="margin-top: 15px;">
+                    <button class="btn-main" data-action="save-volatility-settings">💾 ভোলাটিলিটি সেভ করুন</button>
+                </div>
+            </div>
+
+        </div> <!-- trading শেষ -->
+
+    </div> <!-- admin-content শেষ -->
+
+    <!-- ============================================================ -->
+    <!-- ✅ JavaScript (Trading এর জন্য) -->
+    <!-- ============================================================ -->
+    <script>
+        const API = window.location.origin;
+
+        // ========== 1. সব data-action হ্যান্ডেল করুন ==========
+        document.addEventListener('click', function(e) {
+            const target = e.target.closest('[data-action]');
+            if (!target) return;
+
+            const action = target.dataset.action;
+
+            switch(action) {
+                case 'force-market-price':
+                    forceMarketPrice();
+                    break;
+                case 'set-global-fee':
+                    setGlobalFee();
+                    break;
+                case 'save-volatility-settings':
+                    saveVolatilitySettings();
+                    break;
+                default:
+                    console.warn('Unknown action:', action);
+            }
+        });
+
+        // ========== 2. লগআউট ==========
+        function logout() {
+            if(confirm('Are you sure?')) {
+                fetch('/api/admin/logout', { method: 'POST' })
+                .then(() => window.location.href = '/admin/login');
+            }
+        }
+
+        // ========== 3. লাইভ প্রাইস লোড ==========
+        async function loadLivePrice() {
+            try {
+                const res = await fetch(`${API}/api/market/price`);
+                const d = await res.json();
+                const display = document.getElementById('live-price-display');
+                if (display) display.innerText = "৳ " + (d.live_price || d.price || 0).toFixed(2);
+            } catch(e) {
+                console.error('Price load error:', e);
+            }
+        }
+
+        // ========== 4. মার্কেট প্রাইস ফিক্স ==========
+        async function forceMarketPrice() {
+            const priceInput = document.getElementById('inp-price');
+            if (!priceInput || parseFloat(priceInput.value) <= 0) {
+                alert("দয়া করে সঠিক প্রাইস লিখুন!");
+                return;
+            }
+            const newPrice = parseFloat(priceInput.value);
+            try {
+                const response = await fetch('/api/admin/set_price', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ price: newPrice })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert("✅ মার্কেট প্রাইস সফলভাবে আপডেট হয়েছে!");
+                    priceInput.value = "";
+                    loadLivePrice();
+                } else {
+                    alert("❌ এরর: " + (result.error || "Unknown error"));
+                }
+            } catch (error) {
+                alert("🚨 সার্ভার এরর! প্রাইস আপডেট হয়নি।");
+            }
+        }
+
+        // ========== 5. ট্রেডিং ফি আপডেট ==========
+        async function setGlobalFee() {
+            const feeInput = document.getElementById('c-fee');
+            if (!feeInput || feeInput.value === "") {
+                alert("দয়া করে ফি-র পারসেন্টেজ লিখুন!");
+                return;
+            }
+            const newFee = parseFloat(feeInput.value);
+            try {
+                const response = await fetch('/api/admin/set_fee', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ fee: newFee })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert("✅ ট্রেডিং ফি সফলভাবে আপডেট হয়েছে!");
+                    feeInput.value = "";
+                } else {
+                    alert("❌ এরর: " + (result.error || "Unknown error"));
+                }
+            } catch (error) {
+                alert("🚨 সার্ভার এরর! ফি আপডেট হয়নি।");
+            }
+        }
+
+        // ========== 6. ভোলাটিলিটি সেটিংস ==========
+        async function saveVolatilitySettings() {
+            const impactInput = document.getElementById('trade_impact_factor');
+            const volatilityInput = document.getElementById('price_volatility');
+            if (!impactInput || !volatilityInput) return;
+            const impact = parseFloat(impactInput.value);
+            const volatility = parseFloat(volatilityInput.value);
+            try {
+                const response = await fetch('/api/admin/update_settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ 
+                        trade_impact_factor: impact, 
+                        price_volatility: volatility 
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert("💾 ভোলাটিলিটি সেটিংস সফলভাবে সেভ হয়েছে!");
+                } else {
+                    alert("❌ এরর: " + (result.error || "Unknown error"));
+                }
+            } catch (error) {
+                alert("🚨 সার্ভার এরর! সেটিংস সেভ হয়নি।");
+            }
+        }
+
+        // ========== 7. অ্যাডমিন কনফিগ থেকে মান লোড ==========
+        async function loadTradingConfig() {
+            try {
+                const res = await fetch(`${API}/api/admin/config`, { credentials: 'include' });
+                const data = await res.json();
+
+                if (data.fee !== undefined) {
+                    const feeInput = document.getElementById('c-fee');
+                    if (feeInput) feeInput.value = data.fee;
+                }
+
+                if (data.trade_impact_factor !== undefined) {
+                    const impactInput = document.getElementById('trade_impact_factor');
+                    if (impactInput) impactInput.value = data.trade_impact_factor;
+                }
+
+                if (data.price_volatility !== undefined) {
+                    const volatilityInput = document.getElementById('price_volatility');
+                    if (volatilityInput) volatilityInput.value = data.price_volatility;
+                }
+
+            } catch(e) {
+                console.error('Failed to load trading config:', e);
+            }
+        }
+
+        // ========== 8. পেজ লোড ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            loadLivePrice();
+            loadTradingConfig();
+
+            // প্রতি 2 সেকেন্ডে প্রাইস আপডেট
+            setInterval(loadLivePrice, 2000);
+        });
+
+        console.log('✅ Trading JavaScript loaded!');
+    </script>
+
+</body>
+  </html>
