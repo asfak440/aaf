@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AAF Trading | Pro Terminal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Hind+Siliguri:wght@400;600&family=Syncopate:wght@400;700&display=swap');
+
+        :root {
+            --bg: #05080d;
+            --card: #0f172a;
+            --border: rgba(255, 255, 255, 0.05);
+            --cyan: #00f2fe;
+            --green: #00ffa3;
+            --red: #ff3366;
+            --text: #94a3b8;
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        /* 🎨 লাইট থিমের জন্য ভ্যারিয়েবল রুট ফিক্স */
+        body.light {
+            --bg: #ffffff;
+            --card: #f8fafc;
+            --border: #e2e8f0;
+            --text: #64748b;
+        }
+
+
+
+        body {
+            background-color: #05080d; /* 👈 বাইনান্সের মতো ডার্ক ব্যাকগ্রাউন্ড */
+            color: #ffffff;
+            font-family: 'Rajdhani', sans-serif;
+            margin: 0;
+            padding-bottom: 110px;
+            overflow-x: hidden;
+        }
+
+        /* হেডার ও ফিক্সড এলিমেন্ট */
+        .header {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 20px; z-index: 3000; /* 👈 উচ্চতা ২০px-ই রইল */
+            background: var(--card);
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 15px; box-sizing: border-box;
+            border-bottom: 1px solid var(--border);
+         }
+         .header h2 { 
+             color: #ffffff !important; /* 👈 হেডারের নাম এখন থেকে সবসময় সাদা দেখাবে */
+         }
+
+        #admin-ad-box {
+            position: fixed; top: 20px; left: 0; width: 100%; height: 20px;
+            background: var(--card); z-index: 2999; display: flex; align-items: center;
+        }
+
+        .tf-bar {
+            position: fixed; top: 40px; left: 0; width: 100%; height: 35px;
+            z-index: 2998; background: #000; display: flex; gap: 8px; padding: 5px 15px;
+            overflow-x: auto; box-sizing: border-box;
+        }
+
+        .tf-btn {
+            background: #1e293b; border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8; padding: 2px 8px; border-radius: 4px; font-size: 10px; cursor: pointer;
+        }
+        .tf-btn.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0, 242, 254, 0.1); }
+
+        /* 📉 চার্ট কন্টেইনার ফিক্স */
+        /* 🎯 পরিবর্তন করে এটি বসান: */
+#chart-wrapper {
+    position: fixed;
+    top: 75px;
+    left: 0;
+    width: 100%;
+    height: 250px; /* 👈 ২৫০ থেকে কমিয়ে ১৮০px করুন */
+    z-index: 2997;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    transition: background 0.3s;
+}
+
+#chart-container {
+    width: 100%;
+    height: 250px !important; /* 👈 ২৫০ থেকে কমিয়ে ১৮০px করুন */
+    background: var(--bg);
+    touch-action: none;
+    overflow: hidden;
+    position: relative;
+    transition: background 0.3s;
+}
+
+#chart-theme-toggle {
+    position: fixed;   /* 👈 পুরো স্ক্রিনের সাপেক্ষে ফিক্সড পজিশন */
+    right: 15px;       /* 👈 ডান পাশ থেকে ১৫ পিক্সেল দূরত্ব */
+    bottom: 90px;      /* 👈 নিচের ডক নেভিগেশনের ঠিক ওপরে ভেসে থাকবে */
+    z-index: 5001;     /* 👈 সবার ওপরে দেখানোর জন্য জেন-ইনডেক্স বাড়ানো হলো */
+    padding: 6px 10px; 
+    border-radius: 20px; /* 👈 গোল ক্যাপসুল বাটন লুক দেওয়ার জন্য */
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.15); 
+    background: #1e293b; 
+    color: #fff;
+    display: flex; 
+    align-items: center; 
+    gap: 6px; 
+    font-size: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5); /* 👈 বাটনটি সুন্দর ফুটে ওঠার জন্য শ্যাডো */
+        }
+        body.light #chart-theme-toggle { color: #0f172a; }
+
+        /* কন্টেইনার ও কার্ডের রি-পজিশন */
+        .container {
+            padding-top: 360px !important; /* চার্ট থেকে পারফেক্ট দূরত্ব */
+            padding-bottom: 140px; max-width: 360px; margin: auto; padding-left: 10px; padding-right: 10px;
+        }
+        body.light .container { color: #0f172a; }
+
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .stat-card { background: var(--card); padding: 12px; border-radius: 12px; border: 1px solid var(--border); text-align: center; }
+        .stat-card span { font-size: 10px; color: var(--text); display: block; }
+        .stat-card b { font-family: 'Rajdhani'; font-size: 16px; color: #ffffff !important; /* 👈 ব্যালেন্সের সংখ্যা এখন সবসময় ঝকঝকে সাদা দেখাবে */
+        }
+        .trade-box { background: var(--card); padding: 15px; border-radius: 15px; border: 1px solid var(--border); position: relative; }
+        .input-group { display: flex; gap: 8px; align-items: center; margin-bottom: 15px; }
+        .input-box { flex: 1; position: relative; }
+        .input-box input {
+            width: 100%; background: #000; border: 1px solid var(--border);
+            padding: 12px; color: var(--cyan); font-size: 16px; border-radius: 8px; box-sizing: border-box; outline: none;
+        }
+        body.light .input-box input { background: #fff; color: #000; }
+        .input-box span { position: absolute; right: 8px; top: 14px; color: var(--text); font-size: 10px; }
+
+        .fee-card { background: #0f172a; padding: 12px; border-radius: 10px; border: 1px dashed rgba(255, 255, 255, 0.15); margin-bottom: 15px; }
+        .fee-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; color: #94a3b8 !important; }
+        .fee-row b { color: #ffffff !important; }
+
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn { padding: 12px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 12px; text-transform: uppercase; }
+        .buy { background: var(--green); color: #000; }
+        .sell { background: var(--red); color: #fff; }
+
+        /* ডক নেভিগেশন */
+        .dock-container { 
+    position: fixed; 
+    bottom: 20px; 
+    left: 0;               /* 🎯 ফিক্স: বাম পাশ থেকে ০ লক করা হলো যাতে এক সাইড না হয় */
+    width: 100%; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center;   /* 🎯 ফিক্স: পুরো ডকবার স্ক্রিনের একদম মাঝখানে থাকবে */
+    z-index: 5000; 
+    box-sizing: border-box; 
+}
+
+.dock-nav {
+    width: 90%; 
+    max-width: 360px;      /* 🎯 ফিক্স: আপনার মেইন কন্টেইনারের সাথে উইডথ ম্যাচ করা হলো */
+    height: 55px; 
+    background: rgba(15, 23, 42, 0.95);
+    border-radius: 35px; 
+    border: 1px solid var(--glass-border); 
+    display: flex; 
+    justify-content: space-around; 
+    align-items: center;
+    box-sizing: border-box;
+    padding: 0 10px;       /* 🎯 ফিক্স: ভেতরের আইকনগুলোর জন্য সেফটি প্যাডিং */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5); /* দেখতে প্রিমিয়াম লাগবে */
+}
+
+body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
+
+.nav-item { 
+    color: #94a3b8; 
+    text-decoration: none; 
+    font-size: 9px;        /* হালকা বড় করা হলো পড়ার সুবিধার্থে */
+    text-align: center; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    font-family: 'Rajdhani'; 
+    font-weight: 600; 
+    text-transform: uppercase;
+    flex: 1;               /* 🎯 ফিক্স: ৫টি বাটন সমানভাবে পুরো জায়গা ভাগ করে নেবে, কেউ এক সাইড হবে না */
+}
+
+.nav-item i { 
+    font-size: 18px;       /* আইকন সাইজ পারফেক্ট করা হলো */
+    display: block; 
+    margin-bottom: 3px; 
+}
+
+.nav-item.active { color: var(--cyan); }
+    </style>
+</head>
+<body>
+    <div id="active-user-bar">
+        <i class="fas fa-bolt" style="color: var(--cyan);"></i>
+        <span id="popup-text" style="font-size: 12px; color: #fff; font-weight: bold;"></span>
+    </div>
+
+    <header class="header">
+        <h2 style="font-size: 10px; margin: 0; font-family: 'Syncopate';">AAF TRADING</h2>
+        <span id="live-price" style="font-size: 12px; color: var(--green); font-family: 'Rajdhani';">৳ 0.0000</span>
+    </header>
+
+    <div id="admin-ad-box">
+        <marquee id="admin-ad-text" behavior="scroll" direction="left" style="color: #00f2fe; font-size: 10px;">로드 হচ্ছে...</marquee>
+    </div>
+
+    <div class="tf-bar">
+        <button class="tf-btn" data-tf="1">1M</button>
+        <button class="tf-btn" data-tf="5">5M</button>
+        <button class="tf-btn" data-tf="15">15M</button>
+        <button class="tf-btn" data-tf="60">1H</button>
+        <button class="tf-btn" data-tf="240">4H</button>
+        <button class="tf-btn" data-tf="1440">1D</button>
+    </div>
+
+    <div id="chart-wrapper">
+        <div id="chart-theme-toggle">
+            <i class="fas fa-moon"></i>
+            <span id="theme-status">DARK</span>
+        </div>
+        <div id="chart-container"></div>
+    </div>
+
+    <div class="container">
+        <div class="stat-grid">
+            <div class="stat-card"><span>আপনার AAF</span><b id="user-aaf">0.00</b></div>
+            <div class="stat-card"><span>টাকা ব্যালেন্স</span><b id="user-cash">৳ 0.00</b></div>
+        </div>
+        <div class="trade-box">
+     <div class="input-group">
+        <div class="input-box">
+            <input type="number" id="taka-input" oninput="updateTradeCalculator('taka')" placeholder="0.00" step="any">
+            <span>BDT</span>
+        </div>
+
+        <i class="fas fa-exchange-alt" style="color:var(--text)"></i>
+
+        <div class="input-box">
+            <input type="number" id="coin-input" oninput="updateTradeCalculator('coin')" placeholder="0.00" step="any">
+            <span>AAF</span>
+        </div>
+    </div>
+
+    <div class="fee-card">
+        <div class="fee-row">
+            <span>ফি (<span id="fee-perc">0.5</span>%):</span>
+            <b id="fee-amount">৳ 0.00</b>
+        </div>
+        <div class="fee-row">
+            <span>মোট খরচ:</span>
+            <b id="total-cost" style="color:var(--cyan)">৳ 0.00</b>
+        </div>
+    </div>
+
+    <div class="btn-group">
+        <button id="buy-btn" class="btn buy active" onclick="setTradeMode('buy')">BUY SPOT</button>
+        <button id="sell-btn" class="btn sell" onclick="setTradeMode('sell')">SELL SPOT</button>    
+    </div>
+    </div>
+
+    <div class="dock-container">
+        <nav class="dock-nav">
+            <a href="/dashboard" class="nav-item"><i class="fas fa-house"></i>Home</a>
+            <a href="/task" class="nav-item"><i class="fas fa-tasks"></i>Task</a>
+            <a href="/trading" class="nav-item active"><i class="fas fa-chart-line"></i>Trading</a>
+            <a href="/wallet" class="nav-item"><i class="fas fa-wallet"></i>Wallet</a>
+            <a href="/account" class="nav-item"><i class="fas fa-user-circle"></i>Account</a>
+        </nav>
+    </div>
+
+
+    <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+    <script>
+        // থিম বাটন ক্লিক ফিক্স
+        const toggleBtn = document.getElementById('chart-theme-toggle');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', () => {
+                document.body.classList.toggle('light');
+                const status = document.getElementById('theme-status');
+                if (status) {
+                    status.innerText = document.body.classList.contains('light') ? 'LIGHT' : 'DARK';
+                }
+            });
+        }
+    </script>
+     <script src="/static/js/lightweight-charts.js"></script>
+     <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+
+<script>
+(function() {
+    const container = document.getElementById('chart-container');
+    if (!container) return;
+
+    container.style.cssText = "width: 100%; height: 260px; min-height: 260px; display: block; position: relative;";
+
+    // 📡 রিয়েল-টাইম লাইভ ডিবাগ লগ স্ক্রিন
+    let dbgDiv = document.getElementById('live-debug');
+    if(!dbgDiv) {
+        dbgDiv = document.createElement('div');
+        dbgDiv.id = 'live-debug';
+        dbgDiv.style.cssText = 'position:fixed; bottom:75px; left:5px; right:5px; background:rgba(15,23,42,0.95); color:#00ffa3; font-size:10px; padding:6px; border-radius:6px; z-index:9999; font-family:monospace; border:1px solid #00f2fe; pointer-events:none;';
+        document.body.appendChild(dbgDiv);
+    }
+
+    function log(msg) {
+        if(dbgDiv) {
+            dbgDiv.innerHTML = new Date().toLocaleTimeString() + ' | ' + msg + '<br>' + dbgDiv.innerHTML;
+            let lines = dbgDiv.innerHTML.split('<br>');
+            if(lines.length > 4) dbgDiv.innerHTML = lines.slice(0,4).join('<br>');
+        }
+    }
+
+    let chart = null;
+    let candleSeries = null;
+    let lastPrice = 1.0;
+    let currentTimeframe = 1; 
+    let isDarkTheme = true; 
+    let currentBar = null; 
+    let lastSavedMinute = -1; 
+
+    // 📊 চার্ট আর্কিটেকচার বুটস্ট্র্যাপ (ফিক্সড: একদম বাইন্যান্স স্টাইল জুম ও ওয়ান-টাইম পারফেক্ট রেন্ডারিং)
+function initTradingViewChart() {
+    if (!window.LightweightCharts) return;
+
+    // 🎯 ফিক্স: নতুন চার্ট তৈরির আগে পুরনো চার্ট অবজেক্ট মেমরি থেকে পুরোপুরি ডিলিট করা
+    if (chart) {
+        chart.remove();
+        chart = null;
+    }
+    container.innerHTML = '';
+
+    const activeBg = isDarkTheme ? '#05080d' : '#ffffff';
+    const activeText = isDarkTheme ? '#94a3b8' : '#333333';
+    const activeGrid = isDarkTheme ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0,0,0,0.05)';
+
+    chart = LightweightCharts.createChart(container, {
+        width: container.clientWidth || window.innerWidth,
+        height: 250, 
+        layout: { 
+            background: { type: 'solid', color: activeBg }, 
+            textColor: activeText 
+        },
+        grid: { 
+            vertLines: { color: activeGrid }, 
+            horzLines: { color: activeGrid } 
+        },
+        timeScale: { 
+            timeVisible: true, 
+            secondsVisible: false, 
+            borderColor: activeGrid,
+            // 🔥 ফিক্স ১: barSpacing ৮ থেকে বাড়িয়ে ২৫ করা হলো, যাতে ক্যান্ডেলগুলো চিকন সুতার মতো না দেখিয়ে মোটা ও প্রফেশনাল দেখায়
+            barSpacing: 25, 
+            // 🔥 ফিক্স ২: বাইন্যান্সের মতো ডানপাশের লাইভ প্রাইস লাইনের আগে ৪টি ক্যান্ডেলের সমান ফাঁকা জায়গা (Offset) রাখা হলো
+            rightOffset: 4, 
+            localTime: true,
+            fixLeftEdge: false,
+            fixRightEdge: false
+        },
+        // 🔥 গুরুত্বপূর্ণ ফিক্স ৩: ডানদিকের প্রাইস স্কেলকে চার্টের উপরে ভাসিয়ে দেওয়া হলো (Overlay Mode)
+        // এর ফলে ক্যান্ডেল ডানদিকের প্যানেলের ভেতরে ঢুকে গেলেও পুরোটা ব্যাকগ্রাউন্ডে পরিষ্কার দেখা যাবে!
+        rightPriceScale: {
+            visible: true,
+            borderVisible: false, // বাইন্যান্স লুকের জন্য বর্ডার লাইন হাইড করা হলো
+        },
+        overlayPriceScales: {
+            ticksVisible: true,
+            borderVisible: false,
+        }
+    });
+
+    // 🎯 ফিক্স ৪: চার্টের মোমবাতি এবং ডানপাশের প্রাইস স্কেলকে দশমিকের পর ৬ ঘর দেখানোর জন্য কনফিগার করা হলো
+    candleSeries = chart.addCandlestickSeries({
+        upColor: '#00ffa3',         
+        downColor: '#ff3366',       
+        borderUpColor: '#00ffa3',
+        borderDownColor: '#ff3366',
+        wickUpColor: '#00ffa3',     
+        wickDownColor: '#ff3366',   
+        borderColor: '#1e293b',
+        priceFormat: {
+            type: 'price',
+            precision: 6,      // ২ ঘরের বদলে এখন চার্টে ৬ ঘর দেখাবে (যেমন: 0.999956)
+            minMove: 0.000001, // সর্বনিম্ন কতটুকু নড়াচড়া ট্র্যাক করবে
+        },
+    });
+
+    // 🔥 গুরুত্বপূর্ণ ফিক্স ৫: প্রাইস স্কেলের মোড '0' (Normal/Overlay) তে ফিক্স করা হলো
+    chart.priceScale('right').applyOptions({
+        autoScale: true,
+        borderColor: activeGrid, 
+        textColor: activeText,   
+        scaleMargins: { top: 0.2, bottom: 0.2 }, // ক্যান্ডেল যেন স্ক্রিনের একদম উপরে-নিচে ঠেকে না যায়
+        mode: 0, // 🎯 এই মোডটি ক্যান্ডেলকে প্রাইস লিস্টের পেছনেও দৃশ্যমান রাখতে সাহায্য করে
+    });
+
+    candleSeries.applyOptions({
+        priceLineColor: '#00ffa3', 
+        priceLineWidth: 1,         
+        priceLineStyle: 2,        
+    });
+}
+
+
+    // 🎯 ১. MongoDB থেকে ক্যান্ডেল হিস্ট্রি লোড করার ফাংশন [টাইমফ্রেম প্যারামিটার সহ]
+async function loadChartHistoryFromMongo() {
+    try {
+        log(`📡 MongoDB থেকে ${currentTimeframe} মিনিটের চার্ট ডাটা আনা হচ্ছে...`);
+
+        // 🔥 ফিক্স: ব্যাকএন্ড এপিআই-তে বর্তমান সিলেক্টেড টাইমফ্রেম (currentTimeframe) পাঠিয়ে দেওয়া হলো
+        const res = await fetch(`/api/candles?timeframe=${currentTimeframe}&limit=50000&_cb=` + Date.now(), { credentials: 'include' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
+        let historyCandles = data.candles || [];
+
+        if (candleSeries && historyCandles.length > 0) {
+            let parsed = historyCandles.map(c => {
+                let t = parseInt(c.time);
+                if (t > 9999999999) t = Math.floor(t / 1000); 
+
+                t = t + (6 * 60 * 60); // বাংলাদেশ টাইম অফসেট
+
+                return {
+                    time: t,
+                    open: parseFloat(c.open),
+                    high: parseFloat(c.high),
+                    low: parseFloat(c.low),
+                    close: parseFloat(c.close)
+                };
+            });
+
+            parsed.sort((a, b) => a.time - b.time); 
+            candleSeries.setData(parsed);
+
+            // ❌ পুরনো স্লো জুম-আউট লাইনটি ডিলিট করা হলো: chart.timeScale().fitContent(); 
+
+            // 🔥 ফিক্স: চার্ট লোড হওয়ামাত্রই যেন শেষ ২০টি ক্যান্ডেলকে প্রফেশনাল জুম-ইন করে ফোকাসে আনে
+            const totalCandles = parsed.length;
+            const viewCount = totalCandles > 20 ? 20 : totalCandles; 
+
+            chart.timeScale().setVisibleLogicalRange({
+                from: totalCandles - viewCount,
+                to: totalCandles + 2 // ডানপাশে একটু এক্সট্রা প্রফেশনাল স্পেস রাখা হলো
+            });
+
+            const lastValid = parsed[parsed.length - 1];
+            lastPrice = lastValid.close;
+            currentBar = { ...lastValid };
+
+            log(`✅ MongoDB থেকে ${parsed.length}টি ক্যান্ডেল চার্টে রেন্ডার হয়েছে!`);
+        } else {
+            log("⚠️ ডাটাবেস রেডি হচ্ছে, সামান্য পেন্ডিং...");
+            candleSeries.setData([]);
+        }
+    } catch (err) {
+        log("⚠️ মঙ্গোডিবি চার্ট ডাটা প্রসেস হতে সামান্য পেন্ডিং...");
+    }
+}
+
+        async function syncMongoDBLive() {
+    try {
+        const res = await fetch('/api/market/price?_cb=' + Date.now(), { credentials: 'include' });
+        const data = await res.json();
+
+        if (data && data.live_price) {
+            const livePriceFromMongo = parseFloat(data.live_price);
+
+            // 🔥 ফিক্স ১: ক্যান্ডেল ডাটাবেসে থাকুক বা না থাকুক, হেডের লাইভ প্রাইস সবসময় আপডেট হবে!
+            const priceEl = document.getElementById('live-price');
+            if (priceEl) {
+                priceEl.innerHTML = `৳ ${livePriceFromMongo.toFixed(6)}`;
+                priceEl.style.color = (livePriceFromMongo >= lastPrice) ? '#00ffa3' : '#ff3366';
+            }
+
+            // 🎯 জাদুকরী ফিক্স ২: এডমিন প্যানেল থেকে আসা লাইভ ফি (trade_fee) স্ক্রিনের HTML-এ পুশ করা
+            // এর ফলে এডমিন প্যানেলে ফি চেঞ্জ করলে ইউজারের স্ক্রিনেও সাথে সাথে পারসেন্টেজ বদলে যাবে!
+            if (data.trade_fee !== undefined) {
+                const feePercEl = document.getElementById('fee-perc');
+                if (feePercEl) {
+                    feePercEl.innerText = parseFloat(data.trade_fee);
+                }
+            }
+
+            if (candleSeries && currentBar) {
+                // লাইভ ক্যান্ডেল ট্র্যাকিংয়ের সময় ম্যানুয়ালি ৬ ঘণ্টা যোগ করে লক করা হলো
+                const baseTime = Math.floor(Date.now() / 1000) + (6 * 60 * 60);
+
+                // বর্তমান সিলেক্টেড টাইমফ্রেম (currentTimeframe) অনুযায়ী লাইভ টাইমকে বকেটে কনভার্ট করা
+                let tfMinutes = parseInt(currentTimeframe) || 1; 
+                let tfSeconds = tfMinutes * 60;
+
+                // বর্তমান টাইমফ্রেম অনুযায়ী ক্যান্ডেলের মূল শুরুর সময় (Bucket Time)
+                const currentBucketTime = baseTime - (baseTime % tfSeconds);
+
+                if (currentBucketTime > currentBar.time) {
+                    currentBar = {
+                        time: currentBucketTime,
+                        open: livePriceFromMongo,
+                        high: livePriceFromMongo,
+                        low: livePriceFromMongo,
+                        close: livePriceFromMongo
+                    };
+                } else {
+                    currentBar.high = Math.max(currentBar.high, livePriceFromMongo);
+                    currentBar.low = Math.min(currentBar.low, livePriceFromMongo);
+                    currentBar.close = livePriceFromMongo;
+                }
+
+                // চার্টে মোমবাতি আপডেট পুশ
+                candleSeries.update(currentBar);
+            }
+
+            // গ্লোবাল মেমরি ও ক্যালকুলেটর সচল রাখা
+            lastPrice = livePriceFromMongo;
+
+            // 🔥 ফিক্স ৩: লাইভ প্রাইস বা ফি প্রতি সেকেন্ডে চেঞ্জ হলে ক্যালকুলেটরকে জোর করে রি-ক্যালকুলেট করানো
+            if (typeof window.updateTradeCalculator === 'function') {
+                window.updateTradeCalculator('taka_live');
+            }
+        }
+    } catch (e) {
+        console.error("🚨 Live Sync Error:", e);
+    }
+    }
+
+    // 🔄 ৩. ইউজার ডাটা এবং লাইভ চার্ট রিফ্রেশ সিঙ্ক [এডমিন কন্ট্রোল ও বড় ক্যান্ডেল ফিক্সড]
+    async function syncUserDataAndClosing() {
+        try {
+            const res = await fetch('/api/user/me?_cb=' + Date.now(), { credentials: 'include' });
+            if (res.status === 401) { window.location.href = '/login'; return; }
+            const data = await res.json();
+
+            if (data.status === 'success') {
+                if(document.getElementById('user-cash')) document.getElementById('user-cash').innerHTML = `৳ ${(parseFloat(data.user.cash) || 0).toFixed(2)}`;
+                if(document.getElementById('user-aaf')) document.getElementById('user-aaf').innerHTML = (parseFloat(data.user.aaf) || 0).toFixed(4);
+            }
+
+            // ❌ চার্ট ধ্বংসকারী পুরনো loadChartHistoryFromMongo() কলটি এখান থেকে সম্পূর্ণ রিমুভ করা হলো!
+            // এর ফলে এডমিন প্যানেলের লাইভ প্রাইস লক সাথে সাথে কাজ করবে এবং ভূতুড়ে বড় ক্যান্ডেল তৈরি হওয়া চিরতরে বন্ধ হবে।
+
+        } catch (err) {}
+    }
+
+
+    // 🎨 থিম সুইচার লিসেনার
+    function setupThemeToggleListener() {
+        const toggleBtn = document.getElementById('chart-theme-toggle');
+        const statusText = document.getElementById('theme-status');
+        if (!toggleBtn) return;
+
+        toggleBtn.replaceWith(toggleBtn.cloneNode(true));
+        const activeToggleBtn = document.getElementById('chart-theme-toggle');
+
+        activeToggleBtn.addEventListener('click', function() {
+            isDarkTheme = !isDarkTheme;
+
+            if (isDarkTheme) {
+                if (statusText) statusText.innerText = "DARK";
+                activeToggleBtn.querySelector('i').className = "fas fa-moon";
+                activeToggleBtn.style.color = "#fff";
+                log("🌙 ডার্ক মোড অ্যাক্টিভেটেড");
+            } else {
+                if (statusText) statusText.innerText = "LIGHT";
+                activeToggleBtn.querySelector('i').className = "fas fa-sun";
+                activeToggleBtn.style.color = "#ffb703";
+                log("☀️ লাইট মোড অ্যাক্টিভেটেড");
+            }
+
+            if (chart && candleSeries) {
+                chart.applyOptions({
+                    layout: { 
+                        background: { type: 'solid', color: isDarkTheme ? '#05080d' : '#ffffff' },
+                        textColor: isDarkTheme ? '#94a3b8' : '#333333'
+                    },
+                    grid: {
+                        vertLines: { color: isDarkTheme ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
+                        horzLines: { color: isDarkTheme ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }
+                    }
+                });
+
+                candleSeries.applyOptions({
+                    upColor: '#00ffa3',       
+                    downColor: '#ff3366',     
+                    borderUpColor: '#00ffa3',
+                    borderDownColor: '#ff3366',
+                    wickUpColor: '#00ffa3',   
+                    wickDownColor: '#ff3366'
+                });
+            }
+        }); 
+    }
+
+    // ⏳ টাইমফ্রেম লিসেনার
+    function setupTimeframeListeners() {
+    document.querySelectorAll('.tf-btn').forEach(btn => {
+        btn.replaceWith(btn.cloneNode(true));
+    });
+
+    document.querySelectorAll('.tf-btn').forEach(btn => {
+        const tfVal = parseInt(btn.getAttribute('data-tf'));
+        if (tfVal === currentTimeframe) {
+            btn.style.background = "var(--cyan, #00f2fe)";
+            btn.style.color = "#000";
+        } else {
+            btn.style.background = "";
+            btn.style.color = "";
+        }
+
+        btn.addEventListener('click', function() {
+            const selectedTf = parseInt(this.getAttribute('data-tf'));
+            if (selectedTf && selectedTf !== currentTimeframe) {
+                currentTimeframe = selectedTf;
+                lastSavedMinute = -1; 
+
+                // 🔥 চূড়ান্ত ফিক্স: ১ মিনিটের পুরনো মেমরি এবং ট্র্যাকার সম্পূর্ণ মুছে ফ্রেশ করা হলো
+                currentBar = null; 
+                lastPrice = 0;
+
+                log(`⏳ টাইমফ্রেম সুইচ: ${currentTimeframe}M`);
+                initTradingViewChart();
+                loadChartHistoryFromMongo(); 
+                setupTimeframeListeners();
+            }
+        });
+    });
+    }
+
+// 🔁 স্পট ট্রেড মোড পরিবর্তন (Buy/Sell)
+    window.setTradeMode = function(mode) {
+        const buyBtn = document.getElementById('buy-btn') || document.querySelector('.buy-btn') || document.getElementById('buy-spot');
+        const sellBtn = document.getElementById('sell-btn') || document.querySelector('.sell-btn') || document.getElementById('sell-spot');
+
+        if (!buyBtn || !sellBtn) {
+            log("⚠️ Buy/Sell বাটন ফ্রন্টএন্ডে খুঁজে পাওয়া যায়নি!");
+            return;
+        }
+
+        if (mode === 'sell') {
+            sellBtn.classList.add('sell-active', 'active');
+            buyBtn.classList.remove('active');
+        } else {
+            sellBtn.classList.remove('sell-active', 'active');
+            buyBtn.classList.add('active');
+        }
+
+        // বাটন চেঞ্জ হলে সাথে সাথে ক্যালকুলেটর আপডেট হবে
+        if (typeof window.updateTradeCalculator === 'function') {
+            window.updateTradeCalculator('taka');
+        }
+    }; 
+
+    // 🧮 লাইভ ট্রেড ক্যালকুলেটর (টাকা ⇄ কয়েন এক্সচেঞ্জ ও লাইভ ফি হিসাব)
+    window.updateTradeCalculator = function(source) {
+        // আইডি কনф্লিক্ট এড়াতে অল্টারনেティブ আইডি ব্যাকআপ লক
+        const takaInput = document.getElementById('taka-input') || document.getElementById('bdt-amount') || document.querySelector('input[placeholder*="BDT"]') || document.querySelector('input[type="number"]');
+        const coinInput = document.getElementById('coin-input') || document.getElementById('aaf-amount') || document.querySelector('input[placeholder*="AAF"]');
+
+        if (!takaInput || !coinInput) return;
+
+        // গ্লোবাল লাইভ প্রাইস পড়া (ফালব্যাক ১.০ টাকা)
+        const currentMarketPrice = (typeof lastPrice !== 'undefined' && lastPrice > 0) ? lastPrice : 1.0;
+
+        // 🎯 লজিক: বাই মোডে কারেন্ট প্রাইস, সেল মোডে ২% কম (৯৮% দাম)
+        let isSellMode = false;
+        const sellBtn = document.getElementById('sell-btn') || document.querySelector('.sell-active') || document.querySelector('.active[id*="sell"]');
+        if (sellBtn && (sellBtn.classList.contains('active') || sellBtn.classList.contains('sell-active'))) {
+            isSellMode = true;
+        }
+
+        let finalExecutionPrice = isSellMode ? (currentMarketPrice * 0.98) : currentMarketPrice;
+
+        // ইনপুট বক্সের ডাটা এক্সচেঞ্জ লজিক
+        if (source === 'coin') {
+            const coins = parseFloat(coinInput.value) || 0;
+            let amount = coins * finalExecutionPrice; 
+            if (coinInput.value !== "") {
+                takaInput.value = amount.toFixed(2);
+            } else {
+                takaInput.value = "";
+            }
+        } else {
+            // টাকা ইনপুট দিলে বা লাইভ প্রাইস আপডেট হলে কয়েন হিসাব হবে
+            if (takaInput.value !== "") {
+                const amount = parseFloat(takaInput.value) || 0;
+                coinInput.value = (amount / finalExecutionPrice).toFixed(4);
+            } else {
+                coinInput.value = "";
+            }
+        }
+
+        // 💰 ফি এবং মোট খরচ প্রদর্শন [এডমিন প্যানেল লাইভ কন্ট্রোল ফিক্স]
+        const amountForFee = parseFloat(takaInput.value) || 0;
+
+        // 🎯 এডমিন প্যানেল থেকে আসা লাইভ ফি পারসেন্টেজ রিড করা (না থাকলে ডিফল্ট ০.৫% থাকবে)
+        const feePercentElement = document.getElementById('fee-perc');
+        const feePercent = feePercentElement ? parseFloat(feePercentElement.innerText) : 0.5;
+        const feeRate = feePercent / 100; 
+
+        const fee = amountForFee * feeRate;
+        let totalCost = isSellMode ? (amountForFee - fee) : (amountForFee + fee);
+        let totalCostLabel = isSellMode ? "মোট পাবেন:" : "মোট খরচ:";
+
+        // HTML টেক্সট আপডেট
+        const feeEl = document.getElementById('fee-amount') || document.getElementById('trade-fee');
+        if (feeEl) feeEl.innerText = `৳ ${fee.toFixed(4)}`;
+
+        const totalCostEl = document.getElementById('total-cost') || document.getElementById('total-amount');
+        if (totalCostEl) {
+            totalCostEl.innerText = `৳ ${totalCost.toFixed(4)}`;
+            const labelEl = totalCostEl.parentElement.querySelector('span');
+            if (labelEl) labelEl.innerText = totalCostLabel;
+        }
+    }; 
+
+    // 🚀 ট্রেড অর্ডার এক্সিকিউশন ও ব্যাকএন্ডে সাবমিট লজিক (সব ফিক্সসহ)
+    window.executeTradeAction = async function() {
+        const takaInput = document.getElementById('taka-input') || document.getElementById('bdt-amount') || document.querySelector('input[placeholder*="BDT"]') || document.querySelector('input[type="number"]');
+        if (!takaInput || parseFloat(takaInput.value) <= 0) {
+            alert("দয়া করে সঠিক টাকার পরিমাণ লিখুন!");
+            return;
+        }
+
+        let isSellMode = false;
+        const sellBtn = document.getElementById('sell-btn') || document.querySelector('.sell-active') || document.querySelector('.active[id*="sell"]');
+        if (sellBtn && (sellBtn.classList.contains('active') || sellBtn.classList.contains('sell-active'))) {
+            isSellMode = true;
+        }
+
+        const actionType = isSellMode ? 'sell' : 'buy';
+        const bdtAmount = parseFloat(takaInput.value);
+
+        log(`⏳ ${actionType.toUpperCase()} অর্ডার প্রসেস হচ্ছে...`);
+
+        try {
+            // চার্টের লেটেস্ট লাইভ প্রাইস ব্যাকব্যাক হিসেবে ব্যাকএন্ডে পাঠানো হচ্ছে
+            const currentPrice = typeof lastPrice !== 'undefined' ? lastPrice : 1.0;
+
+            const response = await fetch('/api/trade/execute', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: actionType,    
+                    amount: bdtAmount,
+                    current_price: currentPrice
+                }),
+                credentials: 'include'
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                log(`✅ ${result.message}`);
+                alert(`${actionType === 'buy' ? 'কেনা' : 'বিক্রি'} সফল হয়েছে!`);
+
+                takaInput.value = "";
+                const coinInput = document.getElementById('coin-input') || document.getElementById('aaf-amount');
+                if (coinInput) coinInput.value = "";
+
+                // ইউজার ব্যালেন্স ইনস্ট্যান্ট রিফ্রেশ
+                if (typeof syncUserDataAndClosing === 'function') {
+                    await syncUserDataAndClosing(); 
+                }
+
+                // অর্ডার হওয়ার পর চার্ট ও ক্যান্ডেল আপডেট সিঙ্ক করতে ৪০০ms ফাস্ট রিলোড
+                setTimeout(() => { window.location.reload(); }, 400);
+            } else {
+                log(`❌ এরর: ${result.message}`);
+                alert(`ট্রেড ব্যর্থ হয়েছে: ${result.message}`);
+            }
+        } catch (error) {
+            log("❌ সার্ভার এরর! ট্রেড সাবমিট হয়নি।");
+            alert("সার্ভারের সাথে যোগাযোগ করা যাচ্ছে না।");
+        }
+    };
+
+    // উইন্ডো রেসপন্সিভনেস ফিক্স (মোবাইলে স্ক্রিন ঘুরিয়ে নিলেও চার্ট ভাঙবে না)
+    window.addEventListener('resize', () => {
+        if (chart && container) {
+            chart.resize(container.clientWidth, 250);
+        }
+    });
+
+    // বুট রানার (ইঞ্জিন স্টার্টার)
+    function startTradingEngine() {
+        initTradingViewChart();
+        loadChartHistoryFromMongo(); 
+        setupThemeToggleListener();
+        setupTimeframeListeners();
+
+        // পেজ লোড হওয়ামাত্রই প্রথম সেকেন্ডে ক্যালকুলেটর এক্টিভেট করা
+        if (typeof window.updateTradeCalculator === 'function') {
+            window.updateTradeCalculator('taka');
+        }
+
+        setInterval(syncMongoDBLive, 1000);
+        setInterval(syncUserDataAndClosing, 3000);
+
+        log("🚀 মঙ্গোডিবি ইঞ্জিনের সাথে চার্ট সিঙ্কড ও লাইভ!");
+    }
+
+    // 🎯 ফিক্স: আগের ভাঙা 'window.addEventListener' বানানটি এখানে জোড়া লাগিয়ে নিখুঁত করা হলো
+    if (document.readyState === 'complete') {
+        startTradingEngine();
+    } else {
+        window.addEventListener('load', startTradingEngine);
+    }
+})();
+</script>
+</body>
+</html>
