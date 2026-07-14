@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Wallet - AAF Admin</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+    <!-- ===== নেভিগেশন ===== -->
+    <nav class="admin-nav">
+        <a href="/admin/dashboard">🏠 Dashboard</a>
+        <a href="/admin/tasks">📋 Tasks</a>
+        <a href="/admin/trading">📈 Trading</a>
+        <a href="/admin/wallet" class="active">💰 Wallet</a>
+        <a href="/admin/account">👥 Account</a>
+        <button onclick="logout()" style="background:red; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">🚪 Logout</button>
+    </nav>
+
+    <!-- ===== কন্টেন্ট ===== -->
+    <div class="admin-content" style="padding:20px;">
+        <div id="wallet" class="page-section active" style="display: block;">
+
+            <!-- পেমেন্ট মেথড -->
+            <div class="premium-card">
+                <div class="card-title"><i class="fas fa-university"></i> পেমেন্ট মেথড (Admin Numbers)</div>
+                <label>নগদ নম্বর</label>
+                <input type="text" id="admin_nagad" placeholder="01XXXXXXXXX">
+                <label>বিকাশ/বাইনান্স</label>
+                <input type="text" id="admin_bkash" placeholder="01XXXXXXXXX">
+                <button class="btn-main" data-action="update-wallets">নম্বর সেভ করুন</button>
+            </div>
+
+            <!-- পেন্ডিং ডিপোজিট -->
+            <div class="premium-card">
+                <div class="card-title"><i class="fas fa-history"></i> পেন্ডিং ডিপোজিট রিকোয়েস্ট</div>
+                <div id="pending-list-view">পেন্ডিং ডাটা নেই।</div>
+            </div>
+
+            <!-- পেন্ডিং উইথড্র -->
+            <div id="withdraw-list" class="premium-card">লোড হচ্ছে...</div>
+
+            <!-- Wallet Popup Ad -->
+            <div class="premium-card">
+                <div class="card-title"><i class="fas fa-bullhorn"></i> Wallet Popup Ad</div>
+                <textarea id="wallet_popup_ad" rows="3" placeholder="ওয়ালেট পেজ পপআপ অ্যাড"></textarea>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- ✅ JavaScript (Wallet এর জন্য) -->
+    <!-- ============================================================ -->
+    <script>
+        const API = window.location.origin;
+
+        // ========== 1. সব data-action হ্যান্ডেল করুন ==========
+        document.addEventListener('click', function(e) {
+            const target = e.target.closest('[data-action]');
+            if (!target) return;
+
+            const action = target.dataset.action;
+            const id = target.dataset.id || '';
+
+            switch(action) {
+                case 'update-wallets':
+                    updateWallets();
+                    break;
+                case 'approve-withdraw':
+                    approveWithdraw(id);
+                    break;
+                case 'reject-withdraw':
+                    rejectWithdraw(id);
+                    break;
+                case 'approve-deposit':
+                    approveDeposit(id);
+                    break;
+                case 'reject-deposit':
+                    rejectDeposit(id);
+                    break;
+                default:
+                    console.warn('Unknown action:', action);
+            }
+        });
+
+        // ========== 2. লগআউট ==========
+        function logout() {
+            if(confirm('Are you sure?')) {
+                fetch('/api/admin/logout', { method: 'POST' })
+                .then(() => window.location.href = '/admin/login');
+            }
+        }
+
+        // ========== 3. ওয়ালেট আপডেট ==========
+        async function updateWallets() {
+            const nagad = document.getElementById('admin_nagad').value;
+            const bkash = document.getElementById('admin_bkash').value;
+            const walletPopupAd = document.getElementById('wallet_popup_ad')?.value || '';
+
+            try {
+                const res = await fetch('/api/admin/update_wallets', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ nagad, bkash, wallet_popup_ad: walletPopupAd })
+                });
+
+                if (res.ok) {
+                    alert('✅ ওয়ালেট নম্বর সেভ হয়েছে');
+                    loadAdminStats();
+                } else {
+                    alert('❌ সেভ ব্যর্থ');
+                }
+            } catch(err) {
+                console.error(err);
+                alert('❌ সার্ভার এরর: ' + err.message);
+            }
+        }
+
+        // ========== 4. ডিপোজিট লোড ==========
+        async function loadPendingDeposits() {
+            const container = document.getElementById('pending-list-view');
+            if (!container) return;
+
+            try {
+                const res = await fetch('/api/admin/pending_deposits', { credentials: 'include' });
+                const data = await res.json();
+
+                if (!data.deposits || data.deposits.length === 0) {
+                    container.innerHTML = '<div class="empty-state">✅ কোনো পেন্ডিং ডিপোজিট নেই।</div>';
+                    return;
+                }
+
+                let html = `
+                    <table class="request-table">
+                        <thead>
+                            <tr>
+                                <th>ক্রিয়েটর</th>
+                                <th>মেথড</th>
+                                <th>পরিমাণ (৳)</th>
+                                <th>রেফারেন্স ID</th>
+                                <th>অ্যাকশন</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                data.deposits.forEach(d => {
+                    let dateStr = d.created_at ? new Date(d.created_at).toLocaleString('bn-BD') : 'N/A';
+                    html += `
+                        <tr class="deposit-row">
+                            <td><i class="fas fa-user"></i> ${escapeHtml(d.telegram_id)}</td>
+                            <td><i class="fas fa-university"></i> ${escapeHtml(d.method)}</td>
+                            <td><span class="amount">৳ ${parseFloat(d.amount).toLocaleString()}</span></td>
+                            <td><code>${escapeHtml(d.reference)}</code></td>
+                            <td>
+                                <button data-action="approve-deposit" data-id="${d._id}" class="approve-btn">✅ অনুমোদন</button>
+                                <button data-action="reject-deposit" data-id="${d._id}" class="reject-btn">❌ বাতিল</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += `</tbody></table>`;
+                container.innerHTML = html;
+
+            } catch(e) {
+                console.error(e);
+                container.innerHTML = '<div class="error-state">❌ লোড করতে ব্যর্থ: ' + e.message + '</div>';
+            }
+        }
+
+        // ========== 5. ডিপোজিট অনুমোদন/বাতিল ==========
+        async function approveDeposit(id) {
+            const res = await fetch('/api/admin/approve_deposit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ id })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert('✅ ডিপোজিট অনুমোদিত হয়েছে');
+                loadPendingDeposits();
+            } else {
+                alert('❌ ব্যর্থ: ' + (data.error || 'Unknown error'));
+            }
+        }
+
+        async function rejectDeposit(id) {
+            const res = await fetch('/api/admin/reject_deposit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ id })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert('❌ ডিপোজিট বাতিল করা হয়েছে');
+                loadPendingDeposits();
+            } else {
+                alert('❌ ব্যর্থ: ' + (data.error || 'Unknown error'));
+            }
+        }
+
+        // ========== 6. উইথড্র লোড ==========
+        async function loadWithdraws() {
+            const container = document.getElementById('withdraw-list');
+            if (!container) return;
+
+            try {
+                const res = await fetch('/api/admin/withdraws', { credentials: 'include' });
+                const data = await res.json();
+
+                if (!data.list || data.list.length === 0) {
+                    container.innerHTML = '<div class="empty-state">✅ কোনো পেন্ডিং উইথড্র নেই।</div>';
+                    return;
+                }
+
+                let html = `
+                    <div class="card-title"><i class="fas fa-money-bill-wave"></i> পেন্ডিং উইথড্র রিকোয়েস্ট</div>
+                    <table class="request-table">
+                        <thead>
+                            <tr>
+                                <th>ইউজার আইডি</th>
+                                <th>পরিমাণ (৳)</th>
+                                <th>মোবাইল নাম্বার</th>
+                                <th>তারিখ</th>
+                                <th>অ্যাকশন</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                data.list.forEach(w => {
+                    let date = w.created_at ? new Date(w.created_at).toLocaleString('bn-BD') : 'তারিখ নেই';
+                    let mobileNumber = w.account_number || w.number || 'N/A';
+
+                    html += `
+                        <tr class="withdraw-row">
+                            <td><i class="fas fa-user"></i> ${escapeHtml(w.telegram_id)}</td>
+                            <td><span class="amount">৳ ${parseFloat(w.amount).toLocaleString()}</span></td>
+                            <td><i class="fas fa-phone"></i> ${escapeHtml(mobileNumber)}</td>
+                            <td>${date}</td>
+                            <td>
+                                <button data-action="approve-withdraw" data-id="${w.id}" class="approve-btn">✅ অনুমোদন</button>
+                                <button data-action="reject-withdraw" data-id="${w.id}" class="reject-btn">❌ বাতিল</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += `</tbody></table>`;
+                container.innerHTML = html;
+
+            } catch(e) {
+                console.error(e);
+                container.innerHTML = '<div class="error-state">❌ লোড করতে ব্যর্থ</div>';
+            }
+        }
+
+        // ========== 7. উইথড্র অনুমোদন/বাতিল ==========
+        async function approveWithdraw(id) {
+            const res = await fetch('/api/admin/withdraw/approve', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ id })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert('✅ উইথড্র অনুমোদিত হয়েছে');
+                loadWithdraws();
+            } else {
+                alert('❌ ব্যর্থ');
+            }
+        }
+
+        async function rejectWithdraw(id) {
+            if (!confirm("উইথড্র রিকোয়েস্টটি বাতিল করতে চান?")) return;
+
+            try {
+                const res = await fetch('/api/admin/reject_withdraw', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ id })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    alert("❌ উইথড্র রিকোয়েস্ট বাতিল করা হয়েছে!");
+                    loadWithdraws();
+                } else {
+                    alert("❌ ব্যর্থ: " + (data.message || "Unknown error"));
+                }
+            } catch(err) {
+                console.error(err);
+                alert("🚨 সার্ভার ত্রুটি!");
+            }
+        }
+
+        // ========== 8. হেল্পার ==========
+        function escapeHtml(text) {
+            if (!text) return "";
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ========== 9. অ্যাডমিন স্ট্যাটস লোড (ওয়ালেটের জন্য) ==========
+        async function loadAdminStats() {
+            try {
+                const res = await fetch(`${API}/api/admin/config`, { credentials: 'include' });
+                const data = await res.json();
+
+                if (data.wallet) {
+                    const nagad = document.getElementById('admin_nagad');
+                    if (nagad) nagad.value = data.wallet.nagad || '';
+                    const bkash = document.getElementById('admin_bkash');
+                    if (bkash) bkash.value = data.wallet.bkash || '';
+                }
+
+                const walletAd = document.getElementById('wallet_popup_ad');
+                if (walletAd && data.wallet_popup_ad !== undefined) {
+                    walletAd.value = data.wallet_popup_ad || '';
+                }
+
+            } catch(e) { 
+                console.error("Failed to load admin stats", e); 
+            }
+        }
+
+        // ========== 10. পেজ লোড ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPendingDeposits();
+            loadWithdraws();
+            loadAdminStats();
+        });
+
+        console.log('✅ Wallet JavaScript loaded!');
+    </script>
+
+</body>
+</html>
