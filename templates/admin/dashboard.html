@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard - AAF Admin</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+    <!-- ===== নেভিগেশন ===== -->
+    <nav class="admin-nav">
+        <a href="/admin/dashboard" class="active">🏠 Dashboard</a>
+        <a href="/admin/tasks">📋 Tasks</a>
+        <a href="/admin/trading">📈 Trading</a>
+        <a href="/admin/wallet">💰 Wallet</a>
+        <a href="/admin/account">👥 Account</a>
+        <button onclick="logout()" style="background:red; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">🚪 Logout</button>
+    </nav>
+
+    <!-- ===== কন্টেন্ট ===== -->
+    <div class="admin-content" style="padding:20px;">
+
+        <!-- ===== ড্যাশবোর্ড ===== -->
+        <div id="dashboard" class="page-section active" style="display: block;">
+
+            <!-- পপআপ ডিসপ্লে -->
+            <div id="popup-display" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #0d111c; border: 2px solid #00f2fe; border-radius: 20px; padding: 20px; z-index: 10000; max-width: 90%; width: 350px; box-shadow: 0 0 30px rgba(0,242,254,0.3);">
+                <div style="text-align: right;">
+                    <button data-action="close-popup" style="background: none; border: none; color: #ff5555; font-size: 20px; cursor: pointer;">✕</button>
+                </div>
+                <div id="popup-content"></div>
+            </div>
+
+            <!-- সার্ভার কনফিগারেশন -->
+            <div class="premium-card">  
+                <div class="card-title"><i class="fas fa-server"></i> সার্ভার কনফিগারেশন</div>
+                <div class="row">
+                    <div style="flex:1;">
+                        <label>সার্ভার ইনকাম</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="admin_income" style="flex:1;">
+                            <button data-action="clear-field" data-field="server_income" data-target="admin_income" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
+                        </div>
+                    </div>
+                    <div style="flex:1;">
+                        <label>ট্রেডিং ভলিউম</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="admin_trading" style="flex:1;">
+                            <button data-action="clear-field" data-field="server_trading" data-target="admin_trading" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label>এক্সট্রা ইউজার (ফেক ইউজার)</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="number" id="admin_extra_users" value="0">
+                        <button data-action="clear-field" data-field="extra_users" data-target="admin_extra_users" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
+                    </div>
+                </div>
+                <label>টেলিগ্রাম চ্যানেল লিংক</label>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <input type="text" id="admin_channel_url" style="flex:1;">
+                    <button data-action="clear-field" data-field="channel_url" data-target="admin_channel_url" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
+                </div>
+                <label>চ্যানেল ইউজারনেম (ID)</label>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <input type="text" id="admin_channel_id" style="flex:1;">
+                    <button data-action="clear-field" data-field="channel_id" data-target="admin_channel_id" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
+                </div>
+                <label>ড্যাশবোর্ড ব্যানার অ্যাড</label>
+                <div style="display: flex; gap: 10px; align-items: flex-start; margin-bottom: 15px;">
+                    <textarea id="admin_banner_ad_code" rows="3" style="flex:1;"></textarea>
+                    <button data-action="clear-field" data-field="banner_ad_code" data-target="admin_banner_ad_code" style="background:#da3633; color:white; border:none; padding:8px 12px; border-radius:6px; margin-top: 5px;">🗑️</button>
+                </div>
+                <div>
+                    <label>রেফার বোনাস (৳)</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="number" id="admin_referral_bonus" step="0.5" value="0" placeholder="প্রতি রেফারে কত টাকা দেবেন">
+                        <button data-action="clear-field" data-field="referral_bonus" data-target="admin_referral_bonus" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
+                    </div>
+                    <small>শূন্য (0) দিলে বোনাস বন্ধ থাকবে</small>
+                </div>
+                <button class="btn-main" data-action="update-server-settings" style="margin-top: 15px;">সার্ভার আপডেট করুন</button>
+            </div>
+        </div>
+
+        <!-- ===== বট কনফিগারেশন সেকশন ===== -->
+<div class="premium-card" style="margin-top: 20px; border: 2px solid var(--primary);">
+    <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+        <span><i class="fas fa-robot"></i> বট কনফিগারেশন</span>
+        <span id="bot-config-status" style="font-size: 10px; padding: 3px 12px; border-radius: 15px; background: #4a5568; color: #fff;">⚪ কনফিগার করুন</span>
+    </div>
+
+    <!-- ১. ড্যাশবোর্ড বট -->
+    <div style="margin-bottom: 12px; padding: 12px; background: rgba(0,242,254,0.05); border-radius: 10px; border-left: 3px solid #00f2fe;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+            <label style="font-size: 12px; font-weight: bold; color: #00f2fe;">
+                <i class="fas fa-chart-pie"></i> ড্যাশবোর্ড বট
+            </label>
+            <span id="dash-bot-status" style="font-size: 9px; padding: 2px 10px; border-radius: 12px; background: #da3633; color: #fff;">⚪ নিষ্ক্রিয়</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <input type="text" id="dash-bot-username" style="flex: 1; background: rgba(0,0,0,0.5); border: 1px solid #2d3748; border-radius: 8px; padding: 8px; color: #fff; font-size: 12px;" placeholder="@dashboard_bot">
+            <input type="text" id="dash-bot-token" style="flex: 1; background: rgba(0,0,0,0.5); border: 1px solid #2d3748; border-radius: 8px; padding: 8px; color: #fff; font-size: 12px;" placeholder="বট টোকেন">
+        </div>
+        <small style="color: #718096; font-size: 9px;">ইউজারনেম ও টোকেন দিন, বট নিজেই কাজ করবে</small>
+    </div>
+
+    <!-- ২. টাস্ক ভেরিফিকেশন বট -->
+    <div style="margin-bottom: 12px; padding: 12px; background: rgba(255,170,0,0.05); border-radius: 10px; border-left: 3px solid #ffaa00;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+            <label style="font-size: 12px; font-weight: bold; color: #ffaa00;">
+                <i class="fas fa-tasks"></i> টাস্ক ভেরিফিকেশন বট
+            </label>
+            <span id="task-bot-status" style="font-size: 9px; padding: 2px 10px; border-radius: 12px; background: #da3633; color: #fff;">⚪ নিষ্ক্রিয়</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <input type="text" id="task-bot-username" style="flex: 1; background: rgba(0,0,0,0.5); border: 1px solid #2d3748; border-radius: 8px; padding: 8px; color: #fff; font-size: 12px;" placeholder="@task_bot">
+            <input type="text" id="task-bot-token" style="flex: 1; background: rgba(0,0,0,0.5); border: 1px solid #2d3748; border-radius: 8px; padding: 8px; color: #fff; font-size: 12px;" placeholder="বট টোকেন">
+        </div>
+        <small style="color: #718096; font-size: 9px;">টাস্ক ভেরিফিকেশনের জন্য আলাদা বট</small>
+    </div>
+
+    <!-- ৩. উইথড্রো বট -->
+    <div style="margin-bottom: 12px; padding: 12px; background: rgba(0,255,136,0.05); border-radius: 10px; border-left: 3px solid #00ff88;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+            <label style="font-size: 12px; font-weight: bold; color: #00ff88;">
+                <i class="fas fa-credit-card"></i> উইথড্রো বট
+            </label>
+            <span id="withdraw-bot-status" style="font-size: 9px; padding: 2px 10px; border-radius: 12px; background: #da3633; color: #fff;">⚪ নিষ্ক্রিয়</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <input type="text" id="withdraw-bot-username" style="flex: 1; background: rgba(0,0,0,0.5); border: 1px solid #2d3748; border-radius: 8px; padding: 8px; color: #fff; font-size: 12px;" placeholder="@withdraw_bot">
+            <input type="text" id="withdraw-bot-token" style="flex: 1; background: rgba(0,0,0,0.5); border: 1px solid #2d3748; border-radius: 8px; padding: 8px; color: #fff; font-size: 12px;" placeholder="বট টোকেন">
+        </div>
+        <small style="color: #718096; font-size: 9px;">উইথড্রো ভেরিফিকেশনের জন্য আলাদা বট</small>
+    </div>
+
+    <!-- ৪. অ্যাডমিন টাস্ক বট -->
+    <div style="margin-bottom: 12px; padding: 12px; background: rgba(255,0,85,0.05); border-radius: 10px; border-left: 3px solid #ff0055;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+            <label style="font-size: 12px; font-weight: bold; color: #ff0055;">
+                <i class="fas fa-user-cog"></i> অ্যাডমিন টাস্ক বট
+            </label>
+            <span id="admin-bot-status" style="font-size: 9px; padding: 2px 10px; border-radius: 12px; background: #da3633; color: #fff;">⚪ নিষ্ক্রিয়</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <input type="text" id="admin-bot-username" style="flex: 1; background: rgba(0,0,0,0.5); border: 1px solid #2d3748; border-radius: 8px; padding: 8px; color: #fff; font-size: 12px;" placeholder="@admin_task_bot">
+            <input type="text" id="admin-bot-token" style="flex: 1; background: rgba(0,0,0,0.5); border: 1px solid #2d3748; border-radius: 8px; padding: 8px; color: #fff; font-size: 12px;" placeholder="বট টোকেন">
+        </div>
+        <small style="color: #718096; font-size: 9px;">অ্যাডমিন টাস্ক তৈরির জন্য আলাদা বট</small>
+    </div>
+
+    <!-- সেভ বাটন -->
+    <button class="btn-main" data-action="save-all-bots" style="width: 100%; margin-top: 10px; background: linear-gradient(135deg, #00f2fe, #00d4ff);">
+        💾 সব বট সেভ করুন
+    </button>
+</div>
+</div> <!-- admin-content শেষ -->
+
+    <!-- ============================================================ -->
+    <!-- ✅ JavaScript (Dashboard এর জন্য) -->
+    <!-- ============================================================ -->
+    <script>
+        const API = window.location.origin;
+
+        // ========== 1. সব data-action হ্যান্ডেল করুন ==========
+        document.addEventListener('click', function(e) {
+            const target = e.target.closest('[data-action]');
+            if (!target) return;
+
+            const action = target.dataset.action;
+            const field = target.dataset.field || '';
+            const targetId = target.dataset.target || '';
+
+            switch(action) {
+                case 'clear-field':
+                    clearField(field, targetId);
+                    break;
+                case 'update-server-settings':
+                    updateServerSettings();
+                    break;
+                case 'close-popup':
+                    closePopup();
+                    break;
+                default:
+                    console.warn('Unknown action:', action);
+            }
+        });
+
+        // ========== 2. লগআউট ==========
+        function logout() {
+            if(confirm('Are you sure?')) {
+                fetch('/api/admin/logout', { method: 'POST' })
+                .then(() => window.location.href = '/admin/login');
+            }
+        }
+
+        // ========== 3. ফিল্ড ক্লিয়ার ==========
+        async function clearField(fieldName, elementId) {
+            if (!confirm(`"${fieldName}" ফিল্ডটি খালি করতে চান?`)) return;
+            document.getElementById(elementId).value = '';
+            try {
+                const res = await fetch('/api/admin/clear_field', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ field: fieldName })
+                });
+                const data = await res.json();
+                alert(data.success ? '✅ সফল হয়েছে' : '❌ ব্যর্থ');
+            } catch(e) { alert('সার্ভার এরর'); }
+        }
+
+        // ========== 4. সার্ভার সেটিংস আপডেট ==========
+        async function updateServerSettings() {
+            const data = {
+                channel_url: document.getElementById('admin_channel_url')?.value || '',
+                bot_token: document.getElementById('admin_bot_token')?.value || '',
+                channel_id: document.getElementById('admin_channel_id')?.value || '',
+                server_income: parseFloat(document.getElementById('admin_income')?.value) || 0,
+                server_trading: parseFloat(document.getElementById('admin_trading')?.value) || 0,
+                banner_ad_code: document.getElementById('admin_banner_ad_code')?.value || '',
+                referral_bonus: parseFloat(document.getElementById('admin_referral_bonus')?.value) || 0,
+                extra_users: parseInt(document.getElementById('admin_extra_users')?.value) || 0,
+                popup_ad_title: document.getElementById('popup_ad_title')?.value || '',
+                popup_ad_desc: document.getElementById('popup_ad_desc')?.value || '',
+                popup_ad_image: document.getElementById('popup_ad_image')?.value || '',
+                popup_ad_enabled: document.getElementById('popup_ad_enabled')?.value === 'true',
+                banner_image: document.getElementById('banner_image')?.value || '',  // ← যোগ করুন
+            };
+
+            try {
+                const res = await fetch('/api/admin/update_settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if (res.ok && result.success) {
+                    alert('✅ সার্ভার আপডেট হয়েছে');
+                    loadAdminStats();
+                } else {
+                    alert('❌ আপডেট ব্যর্থ: ' + (result.error || 'Unknown error'));
+                }
+            } catch(err) {
+                console.error(err);
+                alert('❌ সার্ভার এরর: ' + err.message);
+            }
+        }
+
+        // ========== 5. অ্যাডমিন স্ট্যাটস লোড ==========
+        async function loadAdminStats() {
+            try {
+                const res = await fetch(`${API}/api/admin/config`, { credentials: 'include' });
+                const data = await res.json();
+
+                if (data.server_income !== undefined) {
+                    const income = document.getElementById('admin_income');
+                    if (income) income.value = data.server_income;
+                    const trading = document.getElementById('admin_trading');
+                    if (trading) trading.value = data.server_trading;
+                }
+
+                if (data.banner_ad_code !== undefined) {
+                    const banner = document.getElementById('admin_banner_ad_code');
+                    if (banner) banner.value = data.banner_ad_code;
+                }
+
+                if (data.bot_token !== undefined) {
+                    const botToken = document.getElementById('admin_bot_token');
+                    if (botToken) botToken.value = data.bot_token;
+                }
+
+                if (data.channel_url !== undefined) {
+                    const channelUrl = document.getElementById('admin_channel_url');
+                    if (channelUrl) channelUrl.value = data.channel_url;
+                }
+
+                if (data.channel_id !== undefined) {
+                    const channelId = document.getElementById('admin_channel_id');
+                    if (channelId) channelId.value = data.channel_id;
+                }
+
+                if (data.extra_users !== undefined) {
+                    const extraUsers = document.getElementById('admin_extra_users');
+                    if (extraUsers) extraUsers.value = data.extra_users;
+                }
+
+                if (data.referral_bonus !== undefined) {
+                    const referralBonus = document.getElementById('admin_referral_bonus');
+                    if (referralBonus) referralBonus.value = data.referral_bonus;
+                }
+
+                if (data.wallet) {
+                    const nagad = document.getElementById('admin_nagad');
+                    if (nagad) nagad.value = data.wallet.nagad || '';
+                    const bkash = document.getElementById('admin_bkash');
+                    if (bkash) bkash.value = data.wallet.bkash || '';
+                }
+
+                if (data.popup_ad_title !== undefined) {
+                    const popupTitle = document.getElementById('popup_ad_title');
+                    if (popupTitle) popupTitle.value = data.popup_ad_title;
+                }
+
+                if (data.popup_ad_desc !== undefined) {
+                    const popupDesc = document.getElementById('popup_ad_desc');
+                    if (popupDesc) popupDesc.value = data.popup_ad_desc;
+                }
+
+                if (data.popup_ad_image !== undefined) {
+                    const popupImage = document.getElementById('popup_ad_image');
+                    if (popupImage) popupImage.value = data.popup_ad_image;
+                }
+
+                if (data.popup_ad_enabled !== undefined) {
+                    const popupEnabled = document.getElementById('popup_ad_enabled');
+                    if (popupEnabled) popupEnabled.value = data.popup_ad_enabled ? 'true' : 'false';
+                }
+
+            } catch(e) { 
+                console.error("Failed to load admin stats", e); 
+            }
+        }
+
+        // ========== 6. পপআপ ক্লোজ ==========
+        function closePopup() {
+            const popupDiv = document.getElementById('popup-display');
+            if (popupDiv) popupDiv.style.display = 'none';
+        }
+
+
+// ========== 2. সব বট সেভ ফাংশন ==========
+        async function saveAllBots() {
+    const btn = document.querySelector('[data-action="save-all-bots"]');
+    const originalText = btn?.textContent || '💾 সব বট সেভ করুন';
+
+    if (btn) {
+        btn.textContent = '⏳ সেভ হচ্ছে...';
+        btn.disabled = true;
+    }
+
+    const botData = {
+        // ইউজারনেম
+        dashboard_username: document.getElementById('dash-bot-username')?.value.trim() || '',
+        task_username: document.getElementById('task-bot-username')?.value.trim() || '',
+        withdraw_username: document.getElementById('withdraw-bot-username')?.value.trim() || '',
+        admin_username: document.getElementById('admin-bot-username')?.value.trim() || '',
+
+        // টোকেন
+      dashboard_token: document.getElementById('dash-bot-token')?.value.trim() || '',
+        task_token: document.getElementById('task-bot-token')?.value.trim() || '',
+        withdraw_token: document.getElementById('withdraw-bot-token')?.value.trim() || '',
+        admin_token: document.getElementById('admin-bot-token')?.value.trim() || ''
+    };
+
+    try {
+        const res = await fetch('/api/admin/bots/save-all', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(botData)
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            alert('✅ সব বট সেভ হয়েছে!');
+            loadBotConfigs(); // রিলোড
+        } else {
+            alert('❌ ' + (data.message || 'সেভ ব্যর্থ'));
+        }
+    } catch(e) {
+        console.error('❌ সেভ ব্যর্থ:', e);
+        alert('❌ সার্ভার এরর');
+    } finally {
+        if (btn) {
+            btn.textContent = originalText;
+            btn.disabled = false;
+        }
+    }
+      }
+// ========== 3. বট কনফিগ লোড ==========
+      async function loadBotConfigs() {
+    try {
+        const res = await fetch('/api/admin/bots/all', {
+            credentials: 'include'
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            // ইউজারনেম বসান
+            document.getElementById('dash-bot-username').value = data.dashboard_username || '';
+            document.getElementById('task-bot-username').value = data.task_username || '';
+            document.getElementById('withdraw-bot-username').value = data.withdraw_username || '';
+            document.getElementById('admin-bot-username').value = data.admin_username || '';
+
+            // টোকেন বসান (সিকিউরিটির জন্য দেখানো হবে না)
+            // document.getElementById('dash-bot-token').value = data.dashboard_token || '';
+
+            // স্ট্যাটাস আপডেট
+            updateBotStatus('dash-bot-status', data.dashboard_active);
+            updateBotStatus('task-bot-status', data.task_active);
+            updateBotStatus('withdraw-bot-status', data.withdraw_active);
+            updateBotStatus('admin-bot-status', data.admin_active);
+
+            // কনফিগ স্ট্যাটাস
+            const configStatus = document.getElementById('bot-config-status');
+            if (configStatus) {
+                const anyActive = data.dashboard_active || data.task_active || data.withdraw_active || data.admin_active;
+                if (anyActive) {
+                    configStatus.textContent = '✅ সক্রিয়';
+                    configStatus.style.background = '#00ff88';
+                    configStatus.style.color = '#000';
+                } else {
+                    configStatus.textContent = '⚪ কনফিগার করুন';
+                    configStatus.style.background = '#4a5568';
+                    configStatus.style.color = '#fff';
+                }
+            }
+        }
+    } catch(e) {
+        console.error('❌ বট কনফিগ লোড ব্যর্থ:', e);
+    }
+      }
+      
+// ========== 4. স্ট্যাটাস আপডেট ফাংশন =======
+      function updateBotStatus(elementId, active) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+
+    if (active) {
+        el.textContent = '✅ সক্রিয়';
+        el.style.background = '#00ff88';
+        el.style.color = '#000';
+    } else {
+        el.textContent = '⚪ নিষ্ক্রিয়';
+        el.style.background = '#da3633';
+        el.style.color = '#fff';
+    }
+        }
+
+        // ========== 1. সব data-action হ্যান্ডেল করুন ==========
+document.addEventListener('click', function(e) {
+    const target = e.target.closest('[data-action]');
+    if (!target) return;
+
+    const action = target.dataset.action;
+    const field = target.dataset.field || '';
+    const targetId = target.dataset.target || '';
+
+    switch(action) {
+        case 'clear-field':
+            clearField(field, targetId);
+            break;
+        case 'update-server-settings':
+            updateServerSettings();
+            break;
+        case 'close-popup':
+            closePopup();
+            break;
+        case 'save-all-bots':
+            saveAllBots();
+            break;
+        default:
+            console.warn('Unknown action:', action);
+    }
+});
+
+// ========== 2. পেজ লোড হলে স্ট্যাটস ও বট কনফিগ লোড করুন ==========
+document.addEventListener('DOMContentLoaded', function() {
+    loadAdminStats();
+    loadBotConfigs();
+});
+
+console.log('✅ Dashboard JavaScript loaded!');
+
+
+</script>
+</body>
+</html>
