@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Referrals - AAF Master</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+    <a href="/dashboard" class="back-btn"><i class="fas fa-chevron-left"></i> BACK TO PANEL</a>
+
+    <div class="refer-stats">
+        <div>
+            <span style="font-size: 10px; color: #94a3b8;">TOTAL PARTNERS</span>
+            <div id="total-ref-count" style="font-size: 20px; font-weight: bold; color: #00f2fe; font-family: 'Syncopate';">0</div>
+        </div>
+        <i class="fas fa-users" style="font-size: 30px; color: rgba(255,255,255,0.1);"></i>
+    </div>
+
+    <h2>PARTNER LIST</h2>
+    <div id="refer-list">
+        <p style="color: gray;">Loading...</p>
+    </div>
+
+    <script>
+    const API = window.location.origin;
+    const TG_KEY = "telegram_id";
+
+    function getTG(){
+        const id = localStorage.getItem(TG_KEY);
+        if(!id) location.href = "/login";
+        return id;
+    }
+
+    async function loadReferList(){
+        const tg = getTG();
+        try{
+            const res = await fetch(`${API}/api/user/referrals/${tg}`, { credentials:"include" });
+            const data = await res.json();
+            const container = document.getElementById('refer-list');
+            const totalSpan = document.getElementById('total-ref-count');
+
+            if(data.referrals && data.referrals.length){
+                totalSpan.innerText = data.referrals.length;
+                container.innerHTML = data.referrals.map(r => `
+                    <div class="refer-card">
+                        <div>
+                            <strong style="font-size: 16px;">${r.username || "User"}</strong><br>
+                            <small>ID: ${r.telegram_id}</small>
+                        </div>
+                        <div class="status-active">joined</div>
+                    </div>
+                `).join('');
+            } else {
+                totalSpan.innerText = "0";
+                container.innerHTML = '<div class="refer-card"><div style="color: #94a3b8;">No referrals yet. Invite friends to get bonus!</div></div>';
+            }
+        } catch(e){ 
+            console.error(e);
+            document.getElementById('refer-list').innerHTML = '<div class="refer-card"><div style="color: #ff4444;">Error loading referral list. Try again.</div></div>';
+        }
+    }
+    window.addEventListener('load', loadReferList);
+    </script>
+</body>
+</html>
