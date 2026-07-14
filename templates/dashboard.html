@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AAF Master Dashboard v18.0 Pro - Cyberpunk Edition</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap');
+
+        :root {
+            --bg: #020617;
+            --glass-card: rgba(15, 23, 42, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --primary: #00f2fe; 
+            --active-green: #00ff88;
+            --danger: #ff0055;
+            --gold: #ffaa00;
+            --text-muted: #94a3b8;
+            --neon-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
+        }
+
+        body { 
+            background: var(--bg); color: #f1f5f9; 
+            font-family: 'Rajdhani', sans-serif; 
+            margin: 0; padding-bottom: 110px;
+            background-image: radial-gradient(circle at 50% 0%, rgba(0, 242, 254, 0.15) 0%, transparent 75%);
+            overflow-x: hidden;
+        }
+
+        /* ড্যাশবোর্ড কম্প্যাক্ট – সবকিছু ছোট */
+.premium-card {
+    padding: 10px !important;
+    margin-bottom: 10px !important;
+}
+.card-title {
+    font-size: 12px !important;
+    margin-bottom: 8px !important;
+}
+.grid-3 .stat-box {
+    padding: 6px 2px !important;
+}
+.stat-box i {
+    font-size: 14px !important;
+}
+.stat-box h4 {
+    font-size: 7px !important;
+}
+.stat-box p {
+    font-size: 9px !important;
+}
+.action-btn {
+    height: 65px !important;
+    font-size: 8px !important;
+    gap: 5px !important;
+}
+.action-btn i {
+    font-size: 16px !important;
+}
+.header-bal-box {
+    padding: 4px 8px !important;
+}
+.header-bal-box div {
+    font-size: 9px !important;
+}
+#u-name {
+    font-size: 11px !important;
+}
+#u-id {
+    font-size: 8px !important;
+}
+.join-card .btn-join {
+    padding: 6px 12px !important;
+    font-size: 9px !important;
+}
+#verify-btn {
+    padding: 8px !important;
+    font-size: 9px !important;
+}
+
+        /* ব্যানার বক্সের ভেতরের সব কন্টেন্ট সেন্টার করতে */
+.banner-ad-box {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+.banner-ad-box > * {
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    text-align: center !important;
+}
+.banner-ad-box {
+    height: 60px !important;
+    margin: 10px 0 !important;
+}
+.dock-nav {
+    height: 55px !important;
+}
+.nav-item i {
+    font-size: 16px !important;
+}
+.nav-item span {
+    font-size: 8px !important;
+}
+
+        /* ===== চ্যানেল স্ট্যাটাস ব্যাজ ===== */
+.status-online {
+    background: var(--active-green) !important;
+    color: #000 !important;
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+}
+.status-offline {
+    background: var(--danger) !important;
+    color: #fff !important;
+    box-shadow: 0 0 20px rgba(255, 0, 85, 0.3);
+}
+.status-checking {
+    background: var(--gold) !important;
+    color: #000 !important;
+    animation: pulse-gold 1s infinite;
+}
+@keyframes pulse-gold {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+#verify-btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 0 30px rgba(0, 242, 254, 0.3);
+}
+#join-btn:hover {
+    transform: scale(1.02);
+}
+
+        /* ১. হেডার ও প্রোফাইল সেকশন */
+        .nav-header { 
+            background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(25px);
+            padding: 5px; display: flex; justify-content: space-between; align-items: center; 
+            position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid var(--glass-border);
+        }
+
+        .u-info h2 { font-size: 14px; margin: 0; color: var(--primary); font-family: 'Syncopate'; text-transform: uppercase; }
+        .u-info span { font-size: 10px; color: var(--active-green); font-weight: bold; }
+
+        .header-bal-box {
+            background: rgba(0,0,0,0.5); padding: 8px 15px; border-radius: 15px;
+            border: 1px solid var(--glass-border); text-align: right;
+        }
+        .header-bal-box div { font-family: 'Syncopate'; font-size: 12px; font-weight: bold; }
+
+        #status-dot {
+            width: 12px; height: 12px; border-radius: 50%;
+            transition: 0.5s; box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        .dot-online { background: var(--active-green) !important; box-shadow: 0 0 15px var(--active-green) !important; animation: pulse 2s infinite; }
+        .dot-offline { background: var(--danger) !important; box-shadow: 0 0 15px var(--danger) !important; }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        /* কার্ড স্টাইল */
+        .premium-card {
+            background: var(--glass-card); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 20px;
+            padding: 15px; margin-bottom: 15px;
+        }
+
+        .container { padding: 15px; max-width: 500px; margin: 0 auto; }
+
+        /* ২. গ্লোবাল সার্ভার স্ট্যাটাস */
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .stat-box { text-align: center; padding: 12px 5px; }
+        .stat-box i { font-size: 18px; margin-bottom: 5px; color: var(--primary); }
+        .stat-box h4 { font-size: 8px; color: #94a3b8; margin: 0; text-transform: uppercase; }
+        .stat-box p { font-size: 10px; font-family: 'Syncopate'; margin: 5px 0 0; }
+
+        /* ৩. অ্যাকশন গ্রিড */
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 15px 0; }
+        .action-btn {
+            height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border-radius: 18px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.03);
+            cursor: pointer; transition: 0.3s; font-family: 'Syncopate'; font-size: 10px; gap: 8px;
+        }
+        .action-btn:active { transform: scale(0.95); }
+        .btn-dep { color: var(--active-green); border-color: rgba(0, 255, 136, 0.3); }
+        .btn-wit { color: var(--primary); border-color: rgba(0, 242, 254, 0.3); }
+
+        /* ৫. একটিভ ইউজার বার */
+        #active-user-bar {
+            position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
+            width: 90%; background: rgba(0, 255, 136, 0.2); border: 1px solid var(--active-green);
+            padding: 10px; border-radius: 12px; display: none; align-items: center; gap: 10px; z-index: 999;
+            backdrop-filter: blur(10px); animation: slideDown 0.5s forwards;
+        }
+        @keyframes slideDown { from { top: -50px; } to { top: 80px; } }
+
+        /* ৬. কমিউনিটি জয়েন কার্ড */
+        .join-card { border-left: 5px solid var(--danger); transition: 0.5s; }
+        .join-card.connected { border-left-color: var(--active-green); }
+        .btn-join {
+            background: var(--danger); border: none; padding: 10px 20px; border-radius: 10px;
+            color: #fff; font-weight: bold; cursor: pointer; font-family: 'Rajdhani';
+        }
+
+        /* ৭. ডক নেভিগেশন */
+        .dock-container { position: fixed; bottom: 20px; width: 100%; display: flex; justify-content: center; z-index: 2000; }
+        .dock-nav {
+            width: 90%; max-width: 400px; height: 70px; background: rgba(15, 23, 42, 0.95);
+            border-radius: 35px; border: 1px solid var(--glass-border); display: flex;
+            justify-content: space-around; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+        .nav-item { color: #94a3b8; text-decoration: none; font-size: 10px; text-align: center; transition: 0.3s; }
+        .nav-item i { font-size: 20px; display: block; margin-bottom: 4px; }
+        .nav-item.active { color: var(--primary); text-shadow: var(--neon-shadow); }
+
+        .banner-ad-box { width: 100%; height: 65px; border-radius: 15px; overflow: hidden; margin: 15px 0; border: 1px dashed var(--glass-border); }
+ </style>
+
+</head>
+<body>
+
+    <!-- ৫. একটিভ ইউজার বার (পপ-আপ) -->
+    <div id="active-user-bar">
+        <i class="fas fa-bolt" style="color: var(--active-green);"></i>
+        <span id="popup-text" style="font-size: 12px; font-weight: bold; color: #fff;"></span>
+    </div>
+
+    <!-- ১. হেডার সেকশন -->
+    <header class="nav-header">
+        <div class="u-info">
+            <h2 id="u-name">Load..</h2>
+            <span>ID: <span id="u-id">000000</span></span>
+        </div>
+
+        <div class="header-bal-box" style="display: flex; gap: 15px; align-items: center; margin-top: 5px;">
+            <div style="text-align: center;">
+                <small style="font-size: 8px; color: #94a3b8; display: block;">CASH</small>
+                <div style="color: var(--active-green); font-size: 11px;">৳: <span id="h-cash">0.00</span></div>
+            </div>
+            <div style="width: 1px; height: 15px; background: rgba(255,255,255,0.1);"></div>
+            <div style="text-align: center;">
+                <small style="font-size: 8px; color: #94a3b8; display: block;">AAF</small>
+                <div style="color: var(--gold); font-size: 11px;">©: <span id="h-aaf">0.00</span></div>
+            </div>
+        </div>
+
+        <div id="status-dot" class="dot-offline"></div>
+    </header>
+
+    <div class="container">
+
+        <!-- ২. গ্লোবাল সার্ভার স্ট্যাটাস -->
+        <div class="premium-card grid-3">
+            <div class="stat-box">
+                <i class="fas fa-vault"></i>
+                <h4>Server Income</h4>
+                <p id="srv-income">৳ 0</p>
+            </div>
+            <div class="stat-box">
+                <i class="fas fa-chart-line"></i>
+                <h4>Trading</h4>
+                <p id="srv-trade">৳ 0</p>
+            </div>
+            <div class="stat-box">
+                <i class="fas fa-users"></i>
+                <h4>Users</h4>
+                <p id="srv-users">0</p>
+            </div>
+        </div>
+
+        <!-- ৩. অ্যাকশন গ্রিড -->
+        <div class="action-grid">
+            <a href="wallet?page=deposit" style="text-decoration: none; color: inherit;">
+                <div class="action-btn btn-dep">
+                    <i class="fas fa-plus-circle"></i> DEPOSIT
+                </div>
+            </a>
+
+            <a href="wallet?page=withdraw" style="text-decoration: none; color: inherit;">
+                <div class="action-btn btn-wit">
+                    <i class="fas fa-wallet"></i> WITHDRAW
+                </div>
+            </a>
+
+            <a href="wallet?page=transfer" style="text-decoration: none; color: inherit;">
+                <div class="action-btn" style="color: var(--gold);">
+                    <i class="fas fa-exchange-alt"></i> TRANSFER
+                </div>
+            </a>
+
+            <a href="trading" style="text-decoration: none; color: inherit;">
+                <div class="action-btn" style="color: var(--danger);">
+                    <i class="fas fa-sync"></i> CONVERT
+                </div>
+            </a>
+        </div>
+        <!-- ৫. অ্যাডভার্টাইজমেন্ট -->
+        <div class="banner-ad-box" id="banner-ad">
+        <div style="width:100%; height:100%; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; color:gray;">
+        ADVERTISEMENT SPACE
+        </div>
+</div>
+
+
+        <div class="premium-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div>
+            <h4 style="font-size: 10px; color: var(--text-muted); margin: 0;">REFER CENTER</h4>
+            <p id="refer-msg" style="font-size: 11px; margin: 5px 0; color: var(--gold);">আপনার বন্ধুদের ইনভাইট করুন</p>
+            <b id="my-refs" style="font-family: 'Syncopate';">0 REFERRED</b>
+        </div>
+        <button onclick="copyReferLink()" style="background: var(--primary); border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer;">📋 COPY LINK</button>
+    </div>
+
+    <!-- 🆕 প্রতি রেফারের বোনাস দেখানোর জায়গা -->
+    <div style="margin-top: 10px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 12px; text-align: center;">
+        <span style="font-size: 10px; color: var(--text-gray);">প্রতি রেফারের বোনাস: </span>
+        <span id="refer-bonus-amount" style="font-size: 12px; font-weight: bold; color: var(--active-green);">লোড হচ্ছে...</span>
+    </div>
+
+    <input type="text" id="referLinkInput" readonly 
+           style="width:94%; background:#000; border:1px solid var(--border); padding:10px; border-radius:10px; color:#fff; font-size:12px;" 
+           placeholder="আপনার রেফার লিংক এখানে দেখাবে">
+        </div>
+
+        <!-- রেফারেল লিস্ট বাটন (আপডেট করা হয়েছে) -->
+        <a href="refer_list" style="text-decoration: none; color: inherit;">
+            <div class="premium-card" style="cursor: pointer; border: 1px solid var(--gold); display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <i class="fas fa-users-cog" style="font-size: 10px; color: var(--gold);"></i>
+                    <div>
+                        <h4 style="font-size: 11px; margin: 0;">REFERRAL LIST</h4>
+                        <p id="refer-count-status" style="color: var(--active-green); font-size: 9px; margin: 0;">মেম্বার লিস্ট দেখুন</p>
+                    </div>
+                </div>
+                <i class="fas fa-chevron-right" style="font-size: 10px; opacity: 0.5;"></i>
+            </div>
+        </a>
+
+        <!-- পেমেন্ট হিস্ট্রি বাটন (আপডেট করা হয়েছে) -->
+        <a href="payment_history" style="text-decoration: none; color: inherit;">
+            <div class="premium-card" style="cursor: pointer; border: 1px solid rgba(0, 242, 254, 0.3); display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <i class="fas fa-history" style="font-size: 18px; color: var(--primary);"></i>
+                    <div>
+                        <h4 style="font-size: 11px; margin: 0;">PAYMENT HISTORY</h4>
+                        <p style="color: var(--primary); font-size: 9px; margin: 0;">লেনদেনের ইতিহাস</p>
+                    </div>
+                </div>
+                <i class="fas fa-chevron-right" style="font-size: 10px; opacity: 0.5;"></i>
+            </div>
+        </a>
+
+
+
+        <!-- ৬. কমিউনিটি জয়েন কার্ড (আপডেটেড) -->
+<div class="premium-card join-card" id="join-container">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+        <div style="width: 40px; height: 40px; background: rgba(0,242,254,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <i class="fas fa-robot" style="font-size: 20px; color: var(--primary);"></i>
+        </div>
+        <div>
+            <h4 style="font-size: 12px; margin: 0; color: var(--primary);" id="bot-name">🤖 AAF Verification Bot</h4>
+            <small style="color: var(--text-muted); font-size: 9px;" id="last-check-time">শেষ চেক: এখনই</small>
+        </div>
+        <div style="margin-left: auto;">
+            <span id="status-badge" style="padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: bold; background: var(--danger); color: #fff;">OFFLINE</span>
+        </div>
+    </div>
+
+    <div style="flex:1; margin-bottom: 12px;">
+        <b id="join-status" style="display:block; font-family:'Syncopate'; font-size: 14px; color: var(--danger);">🔴 চ্যানেলে যুক্ত নন</b>
+        <p id="join-info" style="font-size: 11px; margin: 5px 0; color: #ccc;">চ্যানেলে জয়েন না হলে বোনাস ও ট্রেড বন্ধ থাকবে!</p>
+        <div style="font-size: 10px; color: var(--text-muted); margin-top: 5px;">
+            <i class="fas fa-clock"></i> <span id="next-check">পরবর্তী চেক: আটো </span>
+        </div>
+    </div>
+
+    <button class="btn-join" id="join-btn" onclick="handleAutoJoin()" style="display: block; width: 100%;">
+        🚀 চ্যানেলে জয়েন করুন
+    </button>
+
+    <button onclick="manualVerify()" id="verify-btn" style="display:block; background: linear-gradient(135deg, #00f2fe, #00d4ff); border: none; color:#000; margin-top:10px; width:100%; padding:12px; border-radius:12px; font-weight:bold; cursor:pointer; transition: 0.3s;">
+        ✅ ম্যানুয়ালি ভেরিফাই করুন
+    </button>
+</div>
+
+     <!-- ৭. ডক নেভিগেশন বার -->
+    <div class="dock-container">
+        <nav class="dock-nav">
+            <a href="/dashboard" class="nav-item active"><i class="fas fa-house"></i>Home</a>
+            <a href="/task" class="nav-item"><i class="fas fa-tasks"></i>Task</a>
+            <a href="/trading" class="nav-item"><i class="fas fa-chart-line"></i>Trading</a>
+            <a href="/wallet" class="nav-item"><i class="fas fa-wallet"></i>Wallet</a>
+            <a href="/account" class="nav-item"><i class="fas fa-user-circle"></i>Account</a>
+        </nav>
+    </div>
+<script>
+// ================= GLOBAL =================
+const TG_KEY = "telegram_id";
+const API = window.location.origin;
+
+function getTG(){
+  const id = localStorage.getItem(TG_KEY);
+  if(!id){
+    location.href="/login";
+  }
+  return id;
+}
+
+    // ==================== চ্যানেল মেম্বারশিপ সিস্টেম ====================
+
+// কনফিগারেশন
+const CHANNEL_CONFIG = {
+    BOT_NAME: '🤖 AAF Verification Bot',
+    MANUAL_CHECK_COOLDOWN: 300000, // 5 মিনিট
+};
+
+// স্টেট
+let membershipState = {
+    isMember: false,
+    lastCheck: null,
+    isChecking: false,
+    manualCheckAllowed: true,
+};
+
+// ==================== UI আপডেট ফাংশন ====================
+function updateChannelUI(isMember, isChecking = false) {
+    const statusBadge = document.getElementById('status-badge');
+    const joinStatus = document.getElementById('join-status');
+    const joinInfo = document.getElementById('join-info');
+    const joinBtn = document.getElementById('join-btn');
+    const verifyBtn = document.getElementById('verify-btn');
+    const joinCard = document.getElementById('join-container');
+    const lastCheckTime = document.getElementById('last-check-time');
+    const nextCheck = document.getElementById('next-check');
+    const botName = document.getElementById('bot-name');
+
+    if (botName) botName.innerHTML = CHANNEL_CONFIG.BOT_NAME;
+
+    if (statusBadge) {
+        statusBadge.className = '';
+        if (isChecking) {
+            statusBadge.classList.add('status-checking');
+            statusBadge.textContent = '⏳ চেকিং...';
+        } else if (isMember) {
+            statusBadge.classList.add('status-online');
+            statusBadge.textContent = '✅ ONLINE';
+        } else {
+            statusBadge.classList.add('status-offline');
+            statusBadge.textContent = '❌ OFFLINE';
+        }
+    }
+
+    if (joinStatus) {
+        if (isChecking) {
+            joinStatus.textContent = '⏳ চেক করা হচ্ছে...';
+            joinStatus.style.color = 'var(--gold)';
+        } else if (isMember) {
+            joinStatus.textContent = '✅ চ্যানেলে যুক্ত আছেন!';
+            joinStatus.style.color = 'var(--active-green)';
+        } else {
+            joinStatus.textContent = '🔴 চ্যানেলে যুক্ত নন';
+            joinStatus.style.color = 'var(--danger)';
+        }
+    }
+
+    if (joinInfo) {
+        if (isMember) {
+            joinInfo.textContent = '🎉 আপনি চ্যানেলে যুক্ত আছেন। সব ফিচার ব্যবহার করতে পারবেন!';
+            joinInfo.style.color = 'var(--active-green)';
+        } else {
+            joinInfo.textContent = '⚠️ চ্যানেলে জয়েন না হলে বোনাস, ট্রেড ও অন্যান্য ফিচার বন্ধ থাকবে!';
+            joinInfo.style.color = '#ccc';
+        }
+    }
+
+    if (joinBtn) {
+        joinBtn.style.display = isMember ? 'none' : 'block';
+        if (!isMember) {
+            joinBtn.textContent = '🚀 চ্যানেলে জয়েন করুন';
+        }
+    }
+
+    if (verifyBtn) {
+        verifyBtn.style.display = isMember ? 'none' : 'block';
+    }
+
+    if (joinCard) {
+        joinCard.classList.toggle('connected', isMember);
+    }
+
+    if (lastCheckTime && membershipState.lastCheck) {
+        const time = new Date(membershipState.lastCheck);
+        lastCheckTime.textContent = `শেষ চেক: ${time.toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit' })}`;
+    }
+
+    if (nextCheck) {
+        if (isMember) {
+            nextCheck.textContent = '✅ যুক্ত আছেন, চেকের প্রয়োজন নেই';
+            nextCheck.style.color = 'var(--active-green)';
+        } else {
+            nextCheck.textContent = '🔄 ম্যানুয়ালি ভেরিফাই বাটনে ক্লিক করুন';
+            nextCheck.style.color = 'var(--gold)';
+        }
+    }
+}
+
+// ==================== ম্যানুয়াল ভেরিফাই ====================
+async function manualVerify() {
+    if (!membershipState.manualCheckAllowed) {
+        triggerPopup('⚠️ ৫ মিনিট পর আবার চেষ্টা করুন');
+        return;
+    }
+
+    if (membershipState.isMember) {
+        triggerPopup('✅ আপনি ইতিমধ্যে চ্যানেলে যুক্ত আছেন!');
+        return;
+    }
+
+    membershipState.manualCheckAllowed = false;
+    setTimeout(() => {
+        membershipState.manualCheckAllowed = true;
+    }, CHANNEL_CONFIG.MANUAL_CHECK_COOLDOWN);
+
+    await checkChannelMembership(true);
+}
+
+// ==================== ইনিশিয়ালাইজেশন ====================
+async function initMembershipSystem() {
+    const botName = document.getElementById('bot-name');
+    if (botName) {
+        botName.innerHTML = CHANNEL_CONFIG.BOT_NAME;
+    }
+
+    await checkChannelMembership(true);
+    updateChannelUI(membershipState.isMember);
+
+    console.log('🤖 চ্যানেল সিস্টেম initialized');
+    console.log('📊 বর্তমান স্ট্যাটাস:', membershipState.isMember ? '✅ মেম্বার' : '❌ মেম্বার নন');
+        }
+
+// ================= SAFE INTERVAL =================
+function smartInterval(fn, time){
+  let t;
+  function start(){ t = setInterval(fn, time); }
+  function stop(){ clearInterval(t); }
+
+  document.addEventListener("visibilitychange", ()=>{
+    document.hidden ? stop() : start();
+  });
+
+  start();
+}
+
+// ================= INIT DASHBOARD (আপডেটেড) =================
+async function initDashboard() {
+    try {
+        const response = await fetch(`/api/user/me`, { credentials: "include" });
+        if (!response.ok) throw new Error("Network Error");
+        const data = await response.json();
+
+        if (data.status === "success") {
+            renderUI(data.user, data.admin);
+
+            // রেফার লিংক দেখানো
+            const linkInput = document.getElementById('referLinkInput');
+            if (linkInput && data.user.telegram_id) {
+                linkInput.value = `${window.location.origin}/login?ref=${data.user.telegram_id}`;
+            }
+
+            // 🆕 সার্ভার স্ট্যাটাস আপডেট (admin থেকে নয়, রিয়েল টাইম)
+            await updateServerStats();
+
+        } else if (data.message === "session_expired") {
+            localStorage.removeItem("telegram_id");
+            location.href = "/login";
+        }
+    } catch (err) {
+        triggerPopup("Server Connection Error");
+        console.error(err);
+    }
+}
+
+// ================= ACTION HANDLER =================
+function handleAction(type) {
+
+  let target = "";
+  if (type.includes('=')) {
+    let parts = type.split('=');
+    target = parts[0] + ".html?page=" + parts[1];
+  } else {
+    target = type + ".html";
+  }
+
+  location.href = target;
+}
+
+// ================= JOIN =================
+async function handleAutoJoin() {
+    const btn = document.getElementById('join-btn');
+    if (!btn) return;
+
+    // মেম্বার থাকলে জয়েন বাটন কাজ করবে না
+    if (membershipState.isMember) {
+        triggerPopup('✅ আপনি ইতিমধ্যে চ্যানেলে যুক্ত!');
+        return;
+    }
+
+    btn.innerText = "⏳ জয়েন করা হচ্ছে...";
+    btn.disabled = true;
+
+    try {
+        const res = await fetch('/api/silent_join', { 
+            method: 'POST', 
+            credentials: "include" 
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            triggerPopup("✅ চ্যানেল জয়েন সফল!");
+            // ৫ সেকেন্ড পর ভেরিফাই করুন
+            setTimeout(() => {
+                checkChannelMembership(true);
+            }, 5000);
+        } else {
+            if (data.channel) {
+                window.open(data.channel, "_blank");
+                triggerPopup("📱 চ্যানেলে জয়েন করে আবার ভেরিফাই করুন");
+            } else {
+                triggerPopup("❌ জয়েন করতে সমস্যা হয়েছে");
+            }
+            btn.innerText = "🚀 চ্যানেলে জয়েন করুন";
+            btn.disabled = false;
+        }
+    } catch (error) {
+        console.error(error);
+        triggerPopup("❌ সার্ভার এরর");
+        btn.innerText = "🚀 চ্যানেলে জয়েন করুন";
+        btn.disabled = false;
+    }
+}
+// ============ verifyjoin =====================
+async function verifyJoin() {
+    const btn = document.getElementById('verify-btn');
+    if (!btn) return;
+    const originalText = btn.innerText;
+    btn.innerText = "VERIFYING...";
+    btn.disabled = true;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 সেকেন্ড টাইমআউট
+
+    try {
+        const res = await fetch('/api/verify_join', {
+            method: 'POST',
+            credentials: "include",
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        const data = await res.json();
+
+        if (data.success) {
+            triggerPopup("✅ চ্যানেল ভেরিফাইড!");
+            await initDashboard();  // UI রিফ্রেশ
+        } else {
+            if (data.channel && data.channel.trim()) {
+                window.open(data.channel, "_blank");
+                triggerPopup("❌ চ্যানেলে জয়েন করে আবার ভেরিফাই করুন");
+            } else {
+                triggerPopup("❌ ভেরিফিকেশন ব্যর্থ: " + (data.message || "অজানা ত্রুটি"));
+            }
+        }
+    } catch (error) {
+        clearTimeout(timeoutId);
+        console.error(error);
+        if (error.name === 'AbortError') {
+            triggerPopup("⏰ সার্ভার সাড়া দিচ্ছে না, আবার চেষ্টা করুন");
+        } else {
+            triggerPopup("❌ সার্ভার ত্রুটি, আবার চেষ্টা করুন");
+        }
+    } finally {
+        // নিশ্চিতভাবে বাটন রিস্টোর
+        if (btn) {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    }
+}
+
+    // ================= POPUP (আপডেটেড ভার্সন) =================
+    async function loadPopupData() {
+    try {
+        // পাবলিক এন্ডপয়েন্ট ব্যবহার করুন (লগইন লাগবে না)
+        const res = await fetch('/api/public/popup_config');
+
+        if (!res.ok) {
+            console.log('Popup API error:', res.status);
+            return;
+        }
+
+        const data = await res.json();
+
+        console.log('Popup data loaded:', data); // ডিবাগের জন্য
+
+        const enabled = data.popup_ad_enabled === true;
+        const title = data.popup_ad_title || '📢 নতুন অফার!';
+        const desc = data.popup_ad_desc || '';
+        const image = data.popup_ad_image || '';
+
+        // পপআপ কন্টেন্ট তৈরি
+        let html = `<h3 style="color: #00f2fe; margin-bottom: 10px;">${escapeHtml(title)}</h3>`;
+        if (image) {
+            html += `<img src="${image}" style="width:100%; border-radius:10px; margin-bottom:10px;">`;
+        }
+        if (desc) {
+            html += `<p style="color: #fff; font-size: 14px;">${escapeHtml(desc)}</p>`;
+        }
+
+        const popupContent = document.getElementById('popup-content');
+        if (popupContent) {
+            popupContent.innerHTML = html;
+        } else {
+            console.log('popup-content element not found');
+        }
+
+        // পপআপ দেখান (যদি সক্রিয় থাকে এবং আজকে না দেখে থাকে)
+        if (enabled) {
+            const today = new Date().toDateString();
+            const shown = localStorage.getItem('popup_shown_today') === today;
+
+            if (!shown) {
+                setTimeout(() => {
+                    const popupDiv = document.getElementById('popup-display');
+                    if (popupDiv) {
+                        popupDiv.style.display = 'block';
+                        console.log('Popup displayed');
+                    } else {
+                        console.log('popup-display element not found');
+                    }
+                }, 2000);
+            } else {
+                console.log('Popup already shown today');
+            }
+        } else {
+            console.log('Popup is disabled');
+        }
+    } catch(e) { 
+        console.error('Popup load error:', e); 
+    }
+}
+
+function closePopup() {
+    const popupDiv = document.getElementById('popup-display');
+    if (popupDiv) {
+        popupDiv.style.display = 'none';
+    }
+    localStorage.setItem('popup_shown_today', new Date().toDateString());
+}
+
+    function copyReferLink() {
+    const tg = localStorage.getItem(TG_KEY);
+    if (!tg) {
+        triggerPopup("আপনি লগইন নাই!");
+        return;
+    }
+    const referLink = `${window.location.origin}/login?ref=${tg}`;
+
+    // ইনপুট ফিল্ডে দেখান
+    const input = document.getElementById('referLinkInput');
+    if (input) input.value = referLink;
+
+    // কপি করুন
+    navigator.clipboard.writeText(referLink).then(() => {
+        triggerPopup("✅ রেফার লিংক কপি হয়েছে!");
+    }).catch(() => {
+        triggerPopup("❌ কপি করতে ব্যর্থ, ম্যানুয়ালি কপি করুন");
+    });
+    }
+
+    function createPopupContainer() {
+    if (document.getElementById('popup-display')) return;
+    const popupDiv = document.createElement('div');
+    popupDiv.id = 'popup-display';
+    popupDiv.style.cssText = `
+        display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        background: #0d111c; border: 2px solid #00f2fe; border-radius: 20px; padding: 20px;
+        z-index: 10000; width: 350px; max-width: 90%; box-shadow: 0 0 30px rgba(0,242,254,0.3);
+    `;
+    popupDiv.innerHTML = `
+        <div style="text-align: right;">
+            <button onclick="closePopup()" style="background:none; border:none; color:#ff5555; font-size:20px; cursor:pointer;">✕</button>
+        </div>
+        <div id="popup-content"></div>
+    `;
+    document.body.appendChild(popupDiv);
+    }
+
+    // ================= INIT =================
+    window.addEventListener('load', () => {
+    createPopupContainer(); 
+    initDashboard();
+    smartInterval(initDashboard, 15000);
+    smartInterval(updateServerStats, 10000);
+    loadPopupData();
+
+    // ✅ এই লাইনটি যোগ করুন
+    initMembershipSystem();
+});
+    // ================= UI RENDER =================
+    function renderUI(user, admin) {
+    const setText = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = val;
+    };
+
+    // পূর্ণ নাম দেখানো
+    const nameElement = document.getElementById('u-name');
+    if (nameElement) {
+        let fullName = '';
+        if (user.first_name) fullName += user.first_name;
+        if (user.last_name) fullName += ' ' + user.last_name;
+        fullName = fullName.trim() || user.username || 'USER';
+        nameElement.innerText = fullName.toUpperCase();
+    }
+
+    setText('u-id', ": " + user.telegram_id);
+
+    // CASH ইংরেজি সংখ্যায় দেখান
+    const cashElem = document.getElementById('h-cash');
+    if (cashElem) {
+        cashElem.innerText = parseFloat(user.cash || 0).toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+
+    // AAF ইংরেজি সংখ্যায় দেখান
+    const aafElem = document.getElementById('h-aaf');
+    if (aafElem) {
+        aafElem.innerText = (user.aaf || 0).toLocaleString('en-US');
+    }
+
+    setText('my-refs', (user.refer_count || 0) + " REFERRED");
+
+    // ==================== চ্যানেল স্ট্যাটাস আপডেট (আপডেটেড) ====================
+    const joined = user.is_joined;
+    const dot = document.getElementById('status-dot');
+    const joinBtn = document.getElementById('join-btn');
+    const joinStatus = document.getElementById('join-status');
+    const joinInfo = document.getElementById('join-info');
+    const joinCard = document.getElementById('join-container');
+
+    // ডট স্ট্যাটাস
+    if (dot) dot.className = joined ? 'dot-online' : 'dot-offline';
+
+    // জয়েন বাটন
+    if (joinBtn) joinBtn.style.display = joined ? 'none' : 'block';
+
+    // জয়েন স্ট্যাটাস টেক্সট (আপডেটেড)
+    if (joinStatus) {
+        joinStatus.innerText = joined ? '✅ চ্যানেলে যুক্ত আছেন!' : '🔴 চ্যানেলে যুক্ত নন';
+        joinStatus.style.color = joined ? 'var(--active-green)' : 'var(--danger)';
+    }
+
+    // ইনফো টেক্সট (আপডেটেড)
+    if (joinInfo) {
+        joinInfo.innerText = joined ? '🎉 আপনি চ্যানেলে যুক্ত আছেন। সব ফিচার ব্যবহার করতে পারবেন!' : '⚠️ চ্যানেলে জয়েন না হলে বোনাস, ট্রেড ও অন্যান্য ফিচার বন্ধ থাকবে!';
+        joinInfo.style.color = joined ? 'var(--active-green)' : '#ccc';
+    }
+
+    // কার্ড বর্ডার কালার
+    if (joinCard) joinCard.classList.toggle('connected', joined);
+
+    // ✅ স্টেট আপডেট (নতুন যোগ করা)
+    membershipState.isMember = joined;
+    membershipState.lastCheck = Date.now();
+    updateChannelUI(membershipState.isMember);
+    // ==================== চ্যানেল স্ট্যাটাস আপডেট শেষ ====================
+
+    // ব্যানার অ্যাড রেন্ডার
+    const bannerBox = document.getElementById('banner-ad');
+    if (bannerBox && admin) {
+        const adCode = admin.banner_ad_code ? admin.banner_ad_code.trim() : "";
+        if (adCode !== "") {
+            executeScriptHTML(adCode, bannerBox);
+        } else {
+            bannerBox.innerHTML = '<div style="width:100%; height:100%; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; color:gray;">ADVERTISEMENT SPACE</div>';
+        }
+    }
+
+    // রেফার বোনাস দেখানো
+    const bonusSpan = document.getElementById('refer-bonus-amount');
+    if (bonusSpan && admin) {
+        const bonusAmount = admin.referral_bonus || 0;
+        bonusSpan.innerText = `৳ ${bonusAmount.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        })}`;
+    }
+    }
+
+    function executeScriptHTML(html, targetElement) {
+    targetElement.innerHTML = "";
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+
+    // স্ক্রিপ্টগুলো আলাদা করে রান করানো
+    const scripts = tempDiv.getElementsByTagName('script');
+    for (let script of scripts) {
+        const newScript = document.createElement('script');
+        if (script.src) {
+            newScript.src = script.src;
+        } else {
+            newScript.textContent = script.textContent;
+        }
+        targetElement.appendChild(newScript);
+    }
+
+    // বাকি HTML (ইফ্রেম, ইমেজ, ডিভি) বসানো
+    const otherNodes = Array.from(tempDiv.childNodes).filter(n => n.nodeType !== 1 || n.tagName !== 'SCRIPT');
+    for (let node of otherNodes) {
+        targetElement.appendChild(node.cloneNode(true));
+    }
+    }
+
+    // ফাইলের একদম উপরে যোগ করু
+    function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>"]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        if (m === '"') return '&quot;';
+        return m;
+    });
+    }
+
+    // চ্যানেলের সদস্যপদ চেক করার ফাংশন
+    async function checkChannelMembership(force = false) {
+    // যদি ইতিমধ্যে চেকিং হয়
+    if (membershipState.isChecking && !force) {
+        console.log('⏳ ইতিমধ্যে চেক হচ্ছে...');
+        return;
+    }
+
+    // যদি মেম্বার হয়, তাহলে আর চেক করবেন না
+    if (membershipState.isMember && !force) {
+        console.log('✅ ইতিমধ্যে মেম্বার, চেকের প্রয়োজন নেই');
+        triggerPopup('✅ আপনি ইতিমধ্যে চ্যানেলে যুক্ত আছেন!');
+        return;
+    }
+
+    membershipState.isChecking = true;
+    updateChannelUI(membershipState.isMember, true);
+
+    try {
+        const res = await fetch('/api/check_membership', {
+            credentials: "include",
+            cache: 'no-store'
+        });
+
+        const data = await res.json();
+        console.log('🔍 মেম্বারশিপ চেক ফলাফল:', data);
+
+        const newStatus = data.is_member === true;
+        membershipState.isMember = newStatus;
+        membershipState.lastCheck = Date.now();
+        membershipState.isChecking = false;
+
+        // UI আপডেট
+        updateChannelUI(membershipState.isMember);
+
+        if (membershipState.isMember) {
+            await initDashboard();
+            triggerPopup('✅ চ্যানেল ভেরিফাইড! সব ফিচার খোলা হয়েছে! 🎉');
+        } else {
+            triggerPopup('❌ আপনি এখনও চ্যানেলে যুক্ত নন। দয়া করে জয়েন করুন!');
+        }
+
+    } catch (error) {
+        console.error('❌ মেম্বারশিপ চেক ব্যর্থ:', error);
+        membershipState.isChecking = false;
+        updateChannelUI(membershipState.isMember);
+        triggerPopup('⚠️ চেক করতে সমস্যা হয়েছে, আবার চেষ্টা করুন');
+    }
+    }
+    // ================= ট্রিগার পপআপ (বার্তা দেখানোর জন্য) =================
+    function triggerPopup(message) {
+    const bar = document.getElementById('active-user-bar');
+    const text = document.getElementById('popup-text');
+    if (!bar || !text) return;
+
+    text.innerText = message;
+    bar.style.display = "flex";
+    setTimeout(() => {
+        bar.style.display = "none";
+    }, 3000);
+    }
+
+    // ম্যানুয়াল এবং অটো উভয় মান দেখানোর ফাংশন (আনকমেন্টেড)
+        async function updateServerStats() {
+    try {
+        const response = await fetch('/api/dashboard/stats', {
+            credentials: 'include',
+            cache: 'no-store'
+        });
+
+        if (!response.ok) throw new Error('Network error');
+        const data = await response.json();
+
+        // 🔍 ডিবাগ - দেখুন কি আসছে
+        console.log('📊 Server Stats Response:', data);
+
+        if (data.success) {
+            // ✅ সঠিক ফিল্ড নাম ব্যবহার করুন (ব্যাকএন্ড যা দিচ্ছে)
+
+            // ইনকাম - সরাসরি server_income ব্যবহার করুন
+            const totalIncome = data.server_income || 0;
+
+            // ট্রেডিং - সরাসরি trading_volume ব্যবহার করুন
+            const totalTrading = data.trading_volume || 0;
+
+            // ইউজার - সরাসরি total_users ব্যবহার করুন
+            const totalUsers = data.total_users || 0;
+
+            // অথবা আলাদা আলাদা দেখাতে চাইলে:
+            const autoIncome = data.auto_income || 0;
+            const manualIncome = data.manual_income || 0;
+            const finalIncome = autoIncome + manualIncome; // same as server_income
+
+            const autoTrading = data.auto_trading || 0;
+            const manualTrading = data.manual_trading || 0;
+            const finalTrading = autoTrading + manualTrading; // same as trading_volume
+
+            const autoUsers = data.auto_users || 0;
+            const manualUsers = data.manual_users || 0;
+            const finalUsers = autoUsers + manualUsers; // same as total_users
+
+            // ✅ UI আপডেট (সবচেয়ে সহজ উপায়)
+            const incomeElem = document.getElementById('srv-income');
+            if (incomeElem) {
+                incomeElem.innerHTML = `৳ ${totalIncome.toLocaleString('en-US')}`;
+            }
+
+            const tradeElem = document.getElementById('srv-trade');
+            if (tradeElem) {
+                tradeElem.innerHTML = `৳ ${totalTrading.toLocaleString('en-US')}`;
+            }
+
+            const usersElem = document.getElementById('srv-users');
+            if (usersElem) {
+                usersElem.innerText = totalUsers.toLocaleString('en-US');
+            }
+
+            // 🆕 অটো ও ম্যানুয়াল আলাদা দেখাতে চাইলে (ঐচ্ছিক)
+            // এর জন্য HTML এ এলিমেন্ট যোগ করতে হবে
+            const autoIncomeEl = document.getElementById('auto-income-display');
+            if (autoIncomeEl) {
+                autoIncomeEl.innerText = `৳ ${autoIncome.toLocaleString('en-US')}`;
+            }
+
+            const manualIncomeEl = document.getElementById('manual-income-display');
+            if (manualIncomeEl) {
+                manualIncomeEl.innerText = `৳ ${manualIncome.toLocaleString('en-US')}`;
+            }
+
+        } else {
+            console.error('❌ API returned success: false');
+        }
+    } catch(e) {
+        console.error('❌ সার্ভার স্ট্যাটাস লোড ব্যর্থ:', e);
+        // Fallback মান দেখান
+        const incomeElem = document.getElementById('srv-income');
+        if (incomeElem) incomeElem.innerHTML = '৳ 0';
+
+        const tradeElem = document.getElementById('srv-trade');
+        if (tradeElem) tradeElem.innerHTML = '৳ 0';
+
+        const usersElem = document.getElementById('srv-users');
+        if (usersElem) usersElem.innerText = '0';
+    }
+    }
+</script>
+</body>
+</html>
