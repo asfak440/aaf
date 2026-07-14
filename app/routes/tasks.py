@@ -420,7 +420,7 @@ def user_check_stat():
     if not session_string:
         return jsonify({"success": False, "message": "No session found. Please login first."})
 
-        async def check():
+    async def check():
         from telethon import TelegramClient
         from telethon.sessions import StringSession
         from app import API_ID, API_HASH
