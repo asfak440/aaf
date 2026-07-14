@@ -1,0 +1,236 @@
+/* ============================================
+   AAF MASTER - ইউনিভার্সাল CSS ফাইল (সব পেজের জন্য)
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap');
+
+:root {
+    --bg: #020617;
+    --glass-card: rgba(15, 23, 42, 0.75);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --primary: #00f2fe;
+    --active-green: #00ff88;
+    --danger: #ff0055;
+    --gold: #ffaa00;
+    --text-muted: #94a3b8;
+    --neon-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
+}
+
+/* ========== গ্লোবাল ব্যাকগ্রাউন্ড ========== */
+body {
+    background: var(--bg);
+    color: #f1f5f9;
+    font-family: 'Rajdhani', sans-serif;
+    margin: 0;
+    padding-bottom: 110px;
+    background-image: radial-gradient(circle at 50% 0%, rgba(0, 242, 254, 0.15) 0%, transparent 75%);
+    overflow-x: hidden;
+}
+
+/* ========== হেডার স্টাইল ========== */
+.nav-header, .header {
+    background: rgba(15, 23, 42, 0.9);
+    backdrop-filter: blur(25px);
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+/* ========== কার্ড স্টাইল ========== */
+.premium-card, .history-card, .refer-card, .order-form-card, .trade-box, .input-box, .info-card, .account-item {
+    background: #0d111c !important;
+    backdrop-filter: none !important;
+    border: 1px solid rgba(0, 242, 254, 0.15) !important;
+    border-radius: 20px !important;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+/* ========== স্ট্যাটাস বক্স ========== */
+.stat-box, .stat-card {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    padding: 10px;
+    text-align: center;
+}
+
+.stat-box i, .stat-card i {
+    font-size: 18px;
+    margin-bottom: 5px;
+    color: var(--primary);
+}
+
+.stat-box h4, .stat-card span {
+    font-size: 8px;
+    color: #94a3b8;
+    margin: 0;
+    text-transform: uppercase;
+}
+
+.stat-box p, .stat-card b {
+    font-size: 10px;
+    font-family: 'Syncopate';
+    margin: 5px 0 0;
+}
+
+/* ========== সাইডবার (এডমিন প্যানেল) ========== */
+.sidebar {
+    background: #0d111c;
+    border-right: 1px solid rgba(0, 242, 254, 0.15);
+}
+
+.nav-links li.active, .bottom-nav i.active {
+    color: #00f2fe;
+    background: rgba(0, 242, 254, 0.08);
+    border-radius: 10px;
+}
+
+/* ========== কার্ড টাইটেল ========== */
+.card-title {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: #00f2fe;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ========== ইনপুট ফিল্ড ========== */
+input, textarea, select {
+    width: 100%;
+    background: #000;
+    border: 1px solid rgba(0, 242, 254, 0.15);
+    border-radius: 14px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    color: #fff;
+    font-size: 13px;
+    box-sizing: border-box;
+}
+
+/* ========== বাটন ========== */
+.btn-main {
+    width: 100%;
+    background: linear-gradient(90deg, #00f2fe, #7000ff);
+    border: none;
+    border-radius: 14px;
+    padding: 10px;
+    margin-top: 5px;
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+/* ========== গ্রিড ========== */
+.row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 5px;
+}
+
+/* ========== ডক নেভিগেশন ========== */
+.dock-container, .bottom-nav-container {
+    position: fixed;
+    bottom: 20px;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.dock-nav, .bottom-nav {
+    width: 90%;
+    max-width: 400px;
+    height: 55px;
+    background: rgba(15, 23, 42, 0.95);
+    border-radius: 35px;
+    border: 1px solid var(--glass-border);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+}
+
+.nav-item {
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 8px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+}
+
+.nav-item i {
+    font-size: 16px;
+    display: block;
+    margin-bottom: 3px;
+}
+
+.nav-item.active {
+    color: #00f2fe;
+    text-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
+}
+
+/* ========== টেবিল স্টাইল ========== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    background: #1e293b;
+    color: #00f2fe;
+    padding: 10px;
+    text-align: left;
+    border-bottom: 2px solid #00f2fe;
+}
+
+td {
+    padding: 8px;
+    border-bottom: 1px solid #2d3a5e;
+}
+
+/* ========== স্ট্যাটাস ডট ========== */
+#status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    transition: 0.5s;
+}
+
+.dot-online {
+    background: #00ff88;
+    box-shadow: 0 0 15px #00ff88;
+    animation: pulse 2s infinite;
+}
+
+.dot-offline {
+    background: #ff0055;
+    box-shadow: 0 0 15px #ff0055;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* ========== মোবাইল রেস্পন্সিভ ========== */
+@media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main-content { margin-left: 0; width: 100%; padding: 12px; padding-bottom: 70px; }
+    .bottom-nav { display: flex; }
+    .row { grid-template-columns: 1fr; gap: 6px; }
+  }
