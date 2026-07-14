@@ -1,0 +1,12 @@
+Flask
+flask-cors
+flask-session
+pymongo
+telethon
+gunicorn
+python-dotenv
+cryptography
+requests
+nest-asyncio
+firebase-admin
+pyTelegramBotAPI
