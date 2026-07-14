@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AAF | Central Wallet</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Rajdhani:wght@500;600;700&display=swap');
+
+        :root {
+            --bg: #020617;
+            --card: rgba(15, 23, 42, 0.85);
+            --border: rgba(255, 255, 255, 0.06);
+            --cyan: #00f2fe;
+            --primary: #00ff88;
+            --gold: #ffaa00;
+            --nagad: #f47321;
+            --binance: #F3BA2F;
+            --text-dim: #94a3b8;
+            --neon-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
+        }
+
+        body { 
+            background: var(--bg); color: #f1f5f9; font-family: 'Rajdhani', sans-serif; 
+            margin: 0; padding-bottom: 120px;
+            background-image: radial-gradient(circle at 50% 0%, rgba(112, 0, 255, 0.15) 0%, transparent 70%);
+            overflow-x: hidden;
+        }
+
+        /* --- Header --- */
+        .nav-header { 
+            background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(20px);
+            padding: 11px 15px; display: flex; justify-content: space-between; align-items: center; 
+            border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 1000;
+        }
+        .u-info { display: flex; align-items: center; gap: 10px; }
+        .u-info i { font-size: 20px; color: var(--cyan); filter: drop-shadow(0 0 5px var(--cyan)); }
+        .u-name-box h2 { font-family: 'Syncopate'; font-size: 11px; margin: 0; text-transform: uppercase; letter-spacing: 1px; color: var(--cyan); }
+
+        /* --- Balance Cards --- */
+        .balance-container { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 15px 15px 5px 15px; }
+        .bal-box { 
+            background: var(--card); border: 1px solid var(--border); padding: 15px 10px; border-radius: 20px; 
+            text-align: center; position: relative; overflow: hidden; backdrop-filter: blur(20px);
+        }
+        .bal-box::after { content: ""; position: absolute; bottom: 0; left: 10%; width: 80%; height: 2px; background: var(--cyan); border-radius: 10px; }
+        .bal-box.coin::after { background: var(--gold); }
+        .bal-box span { font-size: 9px; font-family: 'Syncopate'; color: var(--text-dim); display: block; margin-bottom: 5px; letter-spacing: 1px; }
+        .bal-box h3 { font-size: 16px; margin: 0; font-family: 'Syncopate'; color: #fff; }
+
+        /* --- Global Adbox Unit --- */
+        .banner-ad-box { 
+            width: calc(100% - 30px); min-height: 60px; border-radius: 16px; overflow: hidden; 
+            margin: 10px 15px 5px 15px; border: 1px dashed rgba(255,255,255,0.1); 
+            display: flex; align-items: center; justify-content: center; 
+            background: rgba(0,0,0,0.25); color: var(--text-dim); text-align: center; 
+            box-sizing: border-box; padding: 10px;
+        }
+
+        /* --- Tab Menu Style --- */
+        .tab-menu { 
+            display: flex; 
+            background: rgba(0, 0, 0, 0.4); 
+            margin: 15px; 
+            border-radius: 30px; 
+            border: 1px solid var(--border); 
+            padding: 6px;
+            justify-content: space-between;
+        }
+        .tab-btn { 
+            flex: 1; 
+            padding: 12px 5px; 
+            border: none; 
+            background: none; 
+            color: var(--text-dim); 
+            font-family: 'Syncopate'; 
+            font-size: 9px; 
+            cursor: pointer; 
+            transition: 0.3s;
+            border-radius: 25px;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+        .tab-btn.active { 
+            color: #000; 
+            background: linear-gradient(135deg, var(--cyan), #0088cc); 
+            font-weight: 800; 
+            box-shadow: var(--neon-shadow);
+        }
+
+        /* --- Pages Content Control --- */
+        .container { padding: 0 15px; max-width: 500px; margin: auto; }
+
+        /* 🚨 ডিসপ্লে হাইড/শো ফিক্স */
+        .wallet-page { display: none; }
+        .wallet-page.active { display: block !important; animation: fadeIn 0.4s ease-in-out; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- Inputs & Cards --- */
+        .input-box { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid var(--border); margin-bottom: 15px; backdrop-filter: blur(20px); }
+        .input-box label { display: block; font-size: 10px; color: var(--cyan); margin-bottom: 15px; font-family: 'Syncopate'; letter-spacing: 1px; }
+
+        select, input { 
+            width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); 
+            padding: 14px; border-radius: 12px; color: white; margin-bottom: 15px; font-family: 'Rajdhani'; outline: none; box-sizing: border-box; font-size: 14px;
+        }
+        select:focus, input:focus { border-color: var(--cyan); }
+
+        .action-btn { 
+            width: 100%; background: linear-gradient(135deg, var(--cyan), #0088cc); color: #000; border: none; 
+            padding: 15px; border-radius: 14px; font-weight: 800; font-family: 'Syncopate'; font-size: 9px; cursor: pointer;
+            letter-spacing: 1px; box-shadow: 0 4px 12px rgba(0, 242, 254, 0.15); transition: 0.2s;
+        }
+        .action-btn:active { transform: scale(0.98); }
+
+        /* --- Fixed Capsule Bottom Nav --- */
+        .bottom-nav-container { 
+            position: fixed; bottom: 20px; left: 0; width: 100%; 
+            display: flex; justify-content: center; align-items: center; z-index: 5000; box-sizing: border-box; 
+        }
+        .bottom-nav {
+            width: 90%; max-width: 400px; height: 55px; background: rgba(15, 23, 42, 0.95);
+            border-radius: 35px; border: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center;
+            box-sizing: border-box; padding: 0 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); backdrop-filter: blur(10px);
+        }
+        .nav-item { 
+            color: #94a3b8; text-decoration: none; font-size: 8px; text-align: center; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            font-family: 'Rajdhani', sans-serif; font-weight: 600; text-transform: uppercase; flex: 1;               
+        }
+        .nav-item i { font-size: 16px; display: block; margin-bottom: 3px; }
+        .nav-item.active { color: var(--cyan); }
+    </style>
+</head>
+<body>
+
+    <div class="nav-header">
+        <div class="u-info">
+            <i class="fas fa-user-circle"></i>
+            <div class="u-name-box">
+                <h2 id="u-name">LOADING...</h2>
+                <span id="u-tg-val" style="font-size: 10px; color: var(--primary);">ID: N/A</span>
+            </div>
+        </div>
+        <div id="status-tag" style="font-size: 9px; color: var(--primary); font-family: 'Syncopate';"><i class="fas fa-circle" style="font-size: 7px;"></i> ONLINE</div>
+    </div>
+
+    <div class="balance-container">
+        <div class="bal-box">
+            <span>CASH BALANCE</span>
+            <h3 id="wallet-bal">৳ 0.00</h3>
+        </div>
+        <div class="bal-box coin">
+            <span>AAF COINS</span>
+            <h3 id="coin-bal">0.00</h3>
+        </div>
+    </div>
+
+    <div class="banner-ad-box" id="wallet-banner-ad">
+        <p style="font-size: 9px; letter-spacing: 2px; color: var(--text-dim); margin: 0; font-family: 'Syncopate';">
+            <i class="fas fa-ad" style="margin-right:5px; color: var(--cyan);"></i> GLOBAL ADVERTISING UNIT
+        </p>
+    </div>
+
+    <div class="tab-menu">
+        <button class="tab-btn" id="tab-deposit" onclick="showPage(event, 'deposit')">DEPOSIT</button>
+        <button class="tab-btn" id="tab-transfer" onclick="showPage(event, 'transfer')">TRANSFER</button>
+        <button class="tab-btn" id="tab-withdraw" onclick="showPage(event, 'withdraw')">WITHDRAW</button>
+    </div>
+
+    <div class="container">
+        <div id="deposit" class="wallet-page">
+            <div class="input-box">
+                <label>ADD FUNDS</label>
+                <div id="admin-payment-info" style="font-size: 13px; text-align: center; margin-bottom: 12px; color: var(--cyan); font-weight: bold;">Select method...</div>
+                <select id="dep-method" onchange="updateAdminInfo()">
+                    <option value="Nagad">Nagad (Send Money)</option>
+                    <option value="Binance">Binance (Send)</option>
+                </select>
+                <input type="number" id="dep-amount" placeholder="Amount">
+                <input type="text" id="dep-trx" placeholder="Sender Number / Transaction ID">
+                <button class="action-btn" onclick="submitDeposit()">SUBMIT REQUEST</button>
+            </div>
+        </div>
+
+        <div id="transfer" class="wallet-page">
+            <div class="input-box">
+                <label>P2P TRANSFER</label>
+                <select id="trans-type">
+                    <option value="cash">Cash Wallet (৳)</option>
+                    <option value="coin">AAF Coins (🪙)</option>
+                </select>
+                <input type="number" id="trans-id" placeholder="Receiver Telegram ID">
+                <input type="number" id="trans-amount" placeholder="Enter Amount">
+                <button class="action-btn" onclick="processTransfer()">CONFIRM TRANSFER</button>
+            </div>
+        </div>
+
+        <div id="withdraw" class="wallet-page">
+            <div class="input-box">
+                <label>WITHDRAW CASH</label>
+                <input type="number" id="wit-num" placeholder="Nagad/Bkash Number">
+                <input type="number" id="wit-amt" placeholder="Withdraw Amount">
+                <button class="action-btn" style="background: linear-gradient(135deg, var(--nagad), #d24d00); color: #fff; box-shadow: 0 4px 12px rgba(244, 115, 33, 0.2);" onclick="processWithdraw()">SUBMIT WITHDRAW</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-nav-container">
+        <nav class="bottom-nav">
+            <a href="/dashboard" class="nav-item"><i class="fas fa-house"></i><span>Home</span></a>
+            <a href="/task" class="nav-item"><i class="fas fa-tasks"></i><span>Task</span></a>
+            <a href="/trading" class="nav-item"><i class="fas fa-chart-line"></i><span>Trading</span></a>
+            <a href="/wallet" class="nav-item active"><i class="fas fa-wallet"></i><span>Wallet</span></a>
+            <a href="/account" class="nav-item"><i class="fas fa-user-circle"></i><span>Account</span></a>
+        </nav>
+    </div>
+
+    <script>
+        const API = window.location.origin;
+
+        function getTG(){
+            const id = localStorage.getItem("telegram_id");
+            if(!id) window.location.href = "/login";
+            return id;
+        }
+
+        // 🚨 রেন্ডারিং ও ডিসপ্লে ফিক্সড ফাংশন
+        function showPage(event, pageId) {
+            // ১. সব পেজ আগে হাইড করা নিশ্চিত করা হচ্ছে
+            const pages = document.querySelectorAll('.wallet-page');
+            pages.forEach(page => {
+                page.classList.remove('active');
+            });
+
+            // ২. সব বাটনের অ্যাক্টিভ ক্লাস রিমুভ করা হচ্ছে
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // ৩. টার্গেটেড পেজটি শো করা এবং বাটনটিকে গ্লোয়িং অ্যাক্টিভ করা
+            const targetPage = document.getElementById(pageId);
+            if (targetPage) {
+                targetPage.classList.add('active');
+            }
+
+            if(event) {
+                event.currentTarget.classList.add('active');
+            } else {
+                const activeBtn = document.getElementById('tab-' + pageId);
+                if (activeBtn) activeBtn.classList.add('active');
+            }
+        }
+
+        // ডাইনামিক এডমিন পেমেন্ট নম্বর আপডেট (ব্যাকএন্ড থেকে আসল নম্বর দেখাবে)
+async function updateAdminInfo() {
+    const method = document.getElementById('dep-method').value;
+    const infoBox = document.getElementById('admin-payment-info');
+
+    // লোডিং স্ট্যাটাস দেখান
+    infoBox.innerHTML = "⏳ লোড হচ্ছে...";
+
+    try {
+        // ব্যাকএন্ড থেকে ইউজার ও অ্যাডমিন ডাটা আনা
+        const TG_ID = getTG();
+        const res = await fetch(`${API}/api/user/data/${TG_ID}`, { credentials: 'include' });
+        const data = await res.json();
+
+        if (data.status === 'success' && data.admin && data.admin.wallet) {
+            const nagad = data.admin.wallet.nagad || '01XXXXXXXXX';
+            const bkash = data.admin.wallet.bkash || '01XXXXXXXXX';
+
+            if (method === "Nagad") {
+                infoBox.innerHTML = `🎯 নগদ নম্বর: ${nagad} (Send Money)`;
+                infoBox.style.color = "var(--nagad)";
+            } else if (method === "Binance") {
+                infoBox.innerHTML = `🪙 বাইনান্স আইডি: ${bkash} (Binance Pay)`;
+                infoBox.style.color = "var(--binance)";
+            }
+        } else {
+            infoBox.innerHTML = "⚠️ এডমিন নম্বর সেট করা হয়নি";
+        }
+    } catch (error) {
+        console.error("নম্বর লোড করতে ব্যর্থ:", error);
+        infoBox.innerHTML = "❌ নম্বর লোড করতে ব্যর্থ, আবার চেষ্টা করুন";
+    }
+                }
+
+        // লাইভ ডেটা ও এডমিন প্যানেল ব্যানার অ্যাড ফেচ লজিক
+        async function loadUserWalletData() {
+    const TG_ID = getTG();
+    try {
+        const res = await fetch(`${API}/api/user/data/${TG_ID}`, { credentials: 'include' });
+        const data = await res.json();
+
+        if (data.status === 'success') {
+            // 🆕 প্রথম নাম + শেষ নাম একসাথে দেখানো
+            let fullName = '';
+            if (data.user.first_name) fullName += data.user.first_name;
+            if (data.user.last_name) fullName += ' ' + data.user.last_name;
+            fullName = fullName.trim() || data.user.username || "AAF USER";
+
+            document.getElementById('u-name').innerHTML = fullName;
+            document.getElementById('u-tg-val').innerHTML = "ID: " + (data.user.telegram_id || "N/A");
+
+            document.getElementById('wallet-bal').innerHTML = `৳ ${(parseFloat(data.user.cash) || 0).toFixed(2)}`;
+            document.getElementById('coin-bal').innerHTML = (parseFloat(data.user.aaf) || 0).toFixed(4);
+
+            // এডমিন কোড ইনজেকশন
+            if(data.admin && data.admin.banner_ad_code && data.admin.banner_ad_code.trim() !== ""){
+                injectSafeAdHTML(data.admin.banner_ad_code);
+            }
+        }
+    } catch (err) {
+        console.error("🚨 ডাটাবেজ সিঙ্ক এরর:", err);
+        document.getElementById('u-name').innerHTML = "NETWORK ERROR";
+        document.getElementById('u-tg-val').innerHTML = "ID: ----";
+    }
+    }
+
+        // নিরাপদ অ্যাড ইনজেকশন ইঞ্জিন
+        function injectSafeAdHTML(htmlString) {
+            const container = document.getElementById('wallet-banner-ad');
+            if (!container) return;
+            container.innerHTML = '';
+            const temp = document.createElement('div');
+            temp.innerHTML = htmlString;
+            const scripts = Array.from(temp.querySelectorAll('script'));
+            for (let node of temp.childNodes) {
+                if (node.nodeType === 1 && node.tagName === 'SCRIPT') continue;
+                container.appendChild(node.cloneNode(true));
+            }
+            scripts.forEach(oldScript => {
+                const newScript = document.createElement('script');
+                if (oldScript.src) {
+                    newScript.src = oldScript.src;
+                    newScript.async = false;
+                } else {
+                    newScript.textContent = oldScript.textContent;
+                }
+                container.appendChild(newScript);
+            });
+        }
+
+        // ডিপোজিট ডাটা সাবমিশন
+        async function submitDeposit() {
+            const method = document.getElementById('dep-method').value;
+            const amount = parseFloat(document.getElementById('dep-amount').value);
+            const trx = document.getElementById('dep-trx').value.trim();
+
+            if (!amount || amount <= 0 || !trx) {
+                alert("সব তথ্য সঠিকভাবে পূরণ করুন!");
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API}/api/wallet/deposit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ method, amount, reference: trx }),
+                    credentials: 'include'
+                });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    alert("✅ ডিপোজিট রিকোয়েস্ট সফলভাবে পাঠানো হয়েছে!");
+                    document.getElementById('dep-amount').value = "";
+                    document.getElementById('dep-trx').value = "";
+                } else {
+                    alert("❌ এরর: " + result.message);
+                }
+            } catch (e) {
+                alert("🚨 নেটওয়ার্ক ত্রুটি!");
+            }
+        }
+
+        // P2P ট্রান্সফার লজিক
+        async function processTransfer() {
+            const type = document.getElementById('trans-type').value;
+            const targetId = document.getElementById('trans-id').value.trim();
+            const amount = parseFloat(document.getElementById('trans-amount').value);
+
+            if (!targetId || !amount || amount <= 0) {
+                alert("সঠিক আইডি ও অ্যামাউন্ট লিখুন!");
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API}/api/wallet/transfer`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type, receiver_id: targetId, amount }),
+                    credentials: 'include'
+                });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    alert("✅ ট্রান্সফার সফল হয়েছে!");
+                    loadUserWalletData();
+                    document.getElementById('trans-id').value = "";
+                    document.getElementById('trans-amount').value = "";
+                } else {
+                    alert("❌ ব্যর্থ: " + result.message);
+                }
+            } catch (e) {
+                alert("🚨 সার্ভার এরর!");
+            }
+        }
+
+        // উইথড্র লজিক
+                async function processWithdraw() {
+            const number = document.getElementById('wit-num').value.trim();
+            const amount = parseFloat(document.getElementById('wit-amt').value);
+
+            if (!number || !amount || amount <= 0) {
+                alert("সঠিক নম্বর ও উইথড্র পরিমাণ দিন!");
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API}/api/wallet/withdraw`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ account_number: number, amount }),
+                    credentials: 'include'
+                });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    alert("✅ উইথড্র রিকোয়েস্ট সফল হয়েছে!");
+                    loadUserWalletData();
+                    document.getElementById('wit-num').value = "";
+                    document.getElementById('wit-amt').value = "";
+                } else {
+                    alert("❌ ব্যর্থ: " + result.message);
+                }
+            } catch (e) {
+                alert("🚨 সার্ভার এরর!");
+            }
+        }
+
+        // 🔄 পেজ লোড বা রিফ্রেশ হলে ডিফল্ট মেথড ট্রিগার
+        window.addEventListener('DOMContentLoaded', () => {
+            showPage(null, 'deposit'); // প্রথম লোডেই ডিপোজিট ফর্ম ওপেন থাকবে, ফাঁকা থাকবে না।
+            updateAdminInfo();         
+            loadUserWalletData();      
+            setInterval(loadUserWalletData, 10000); // প্রতি ১০ সেকেন্ড পর অটো-সিঙ্ক
+        });
+    </script>
+</body>
+</html>
