@@ -725,3 +725,103 @@ def get_all_bots():
         "withdraw_active": bool(bots.get("withdraw_token")),
         "admin_active": bool(bots.get("admin_token"))
     })
+
+
+# ================================================
+# ========== বট ব্যবহারের ফাংশন ==========
+# ================================================
+
+def get_bot_token(bot_type):
+    """নির্দিষ্ট বটের টোকেন রিটার্ন করে"""
+    admin = get_admin_config()
+    bots = admin.get("bots", {})
+    
+    bot_map = {
+        "dashboard": "dashboard_token",
+        "task": "task_token",
+        "withdraw": "withdraw_token",
+        "admin": "admin_token"
+    }
+    
+    token_key = bot_map.get(bot_type)
+    if token_key:
+        return bots.get(token_key, "")
+    return ""
+
+def send_bot_message(bot_type, chat_id, message):
+    """নির্দিষ্ট বট দিয়ে মেসেজ পাঠায়"""
+    token = get_bot_token(bot_type)
+    if not token:
+        print(f"⚠️ {bot_type} বট টোকেন নেই")
+        return False
+    
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    data = {
+        "chat_id": chat_id,
+        "text": message,
+        "parse_mode": "MARKDOWN"
+    }
+    
+    try:
+        import requests
+        response = requests.post(url, json=data, timeout=10)
+        return response.status_code == 200
+    except Exception as e:
+        print(f"❌ {bot_type} বট এরর: {e}")
+        return False
+
+
+
+@admin_bp.route('/api/admin/bots/validate', methods=["POST"])
+@login_required
+def validate_bot():
+    """বট টোকেন ভ্যালিডেশন চেক"""
+    data = request.json
+    token = data.get("token", "")
+    if not token:
+        return jsonify({"valid": False, "message": "টোকেন দিন"})
+    
+    url = f"https://api.telegram.org/bot{token}/getMe"
+    try:
+        import requests
+        response = requests.get(url, timeout=5)
+        if response.status_code == 200:
+            bot_info = response.json()
+            return jsonify({
+                "valid": True,
+                "username": bot_info.get("result", {}).get("username", "")
+            })
+        return jsonify({"valid": False, "message": "ভুল টোকেন"})
+    except Exception as e:
+        return jsonify({"valid": False, "message": str(e)})
+
+
+
+# ================================================
+# ========== নোটিফিকেশন ফাংশন ==========
+# ================================================
+
+def notify_user(bot_type, user_id, title, message):
+    """ইউজারকে নোটিফিকেশন পাঠায়"""
+    msg = f"**{title}**\n\n{message}"
+    return send_bot_message(bot_type, user_id, msg)
+
+def notify_admin_new_task(admin_user_id, task_id, title):
+    """অ্যাডমিন বট দিয়ে নতুন টাস্ক নোটিফিকেশন"""
+    msg = f"📋 **নতুন টাস্ক তৈরি!**\nআইডি: `{task_id}`\nটাইটেল: {title}"
+    return send_bot_message("admin", admin_user_id, msg)
+
+def notify_task_complete(user_id, task_id, reward):
+    """টাস্ক কমপ্লিট হলে ইউজারকে নোটিফিকেশন"""
+    msg = f"✅ **টাস্ক কমপ্লিট!**\nআইডি: `{task_id}`\nরিওয়ার্ড: ৳{reward}"
+    return send_bot_message("task", user_id, msg)
+
+def notify_withdraw_request(user_id, amount, status="pending"):
+    """উইথড্র রিকোয়েস্টের নোটিফিকেশন"""
+    msg = f"💰 **উইথড্র রিকোয়েস্ট**\nপরিমাণ: ৳{amount}\nস্ট্যাটাস: {status}"
+    return send_bot_message("withdraw", user_id, msg)
+
+def notify_deposit_approved(user_id, amount):
+    """ডিপোজিট অনুমোদনের নোটিফিকেশন"""
+    msg = f"✅ **ডিপোজিট অনুমোদিত!**\nপরিমাণ: ৳{amount}\nআপনার ওয়ালেটে যোগ হয়েছে।"
+    return send_bot_message("dashboard", user_id, msg)
