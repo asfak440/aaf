@@ -8,7 +8,6 @@ from flask import Flask
 from flask_cors import CORS
 from flask_session import Session
 from pymongo import MongoClient
-from app import users_col, temp_otp_data, API_ID, API_HASH
 # ================= CONFIG =================
 API_ID = int(os.environ.get("API_ID", 36466824))
 API_HASH = os.environ.get("API_HASH", "535ddcb85f2c3c74cc0ff532dd2c3406")
