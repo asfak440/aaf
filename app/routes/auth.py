@@ -5,7 +5,9 @@ from telethon import TelegramClient
 from telethon.sessions import StringSession
 from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError, PhoneCodeExpiredError
 
+# ✅ সঠিক উপায়: API_ID ও API_HASH আলাদাভাবে ইমপোর্ট করুন
 from app import users_col, temp_otp_data
+from app import API_ID, API_HASH  # ← আলাদা লাইন
 from app.utils.helpers import normalize_phone, run_async, get_admin_config, update_total_users
 
 auth_bp = Blueprint('auth', __name__)
