@@ -96,7 +96,7 @@ def create_app():
     from app.routes.admin import admin_bp
     from app.routes.api import api_bp
 
-    app.register_blueprint(auth_bp)
+    app.register_blueprint(auth_bp, url_prefix='/')
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(tasks_bp)
     app.register_blueprint(trading_bp)
