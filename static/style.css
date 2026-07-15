@@ -234,3 +234,801 @@ td {
     .bottom-nav { display: flex; }
     .row { grid-template-columns: 1fr; gap: 6px; }
   }
+
+
+/* ============================================
+   AAF MASTER - ফাইনাল স্টাইল v3.0
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Rajdhani:wght@400;600;700&family=Hind+Siliguri:wght@400;600;700&display=swap');
+
+/* ========== রুট ভেরিয়েবল ========== */
+:root {
+    --bg: #020617;
+    --bg-gradient: radial-gradient(circle at 50% 0%, rgba(0, 242, 254, 0.15) 0%, transparent 75%);
+    --card-solid: #0d111c;
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --border: rgba(0, 242, 254, 0.15);
+    --primary: #00f2fe;
+    --active-green: #00ff88;
+    --danger: #ff0055;
+    --gold: #ffaa00;
+    --text-muted: #94a3b8;
+    --text-main: #f1f5f9;
+    --neon-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
+}
+
+/* ========== গ্লোবাল ========== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: var(--bg);
+    background-image: var(--bg-gradient);
+    color: var(--text-main);
+    font-family: 'Hind Siliguri', 'Rajdhani', sans-serif;
+    margin: 0;
+    padding-bottom: 110px;
+    overflow-x: hidden;
+}
+
+/* ========== হেডার - স্বচ্ছ + ব্লার ========== */
+.nav-header, .header {
+    background: rgba(15, 23, 42, 0.9) !important;
+    backdrop-filter: blur(25px) !important;
+    padding: 12px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.nav-header h2, .header h2, .u-info h2, .u-name-box h2 {
+    color: var(--primary) !important;
+    font-family: 'Syncopate';
+    font-size: 14px;
+}
+
+/* ========== গ্লাসমরফিজম ইফেক্ট (ওভাররাইড) ========== */
+.premium-card, .card, .history-card, .refer-card, 
+.order-form-card, .info-card, .account-item, .stat-card,
+.trade-box, .input-box, .wallet-card {
+    background: var(--card-solid) !important;
+    backdrop-filter: none !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 20px !important;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+
+/* ========== স্ট্যাটাস বক্স ========== */
+.stat-box {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    padding: 12px 5px;
+    text-align: center;
+}
+
+.stat-box i {
+    font-size: 18px;
+    margin-bottom: 5px;
+    color: var(--primary);
+}
+
+.stat-box h4 {
+    font-size: 8px;
+    color: var(--text-muted);
+    margin: 0;
+    text-transform: uppercase;
+}
+
+.stat-box p {
+    font-size: 10px;
+    font-family: 'Syncopate';
+    margin: 5px 0 0;
+    color: var(--text-main);
+}
+
+/* ========== গ্রিড ========== */
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 5px; }
+
+/* ========== বাটন - নিয়ন ========== */
+.action-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 15px 0;
+}
+
+.action-btn {
+    height: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: 18px !important;
+    cursor: pointer;
+    transition: 0.3s;
+    font-family: 'Syncopate';
+    font-size: 10px;
+    gap: 8px;
+    text-decoration: none;
+    color: inherit;
+}
+
+.action-btn:active { transform: scale(0.95); }
+
+.btn-dep { 
+    color: var(--active-green); 
+    border-color: rgba(0, 255, 136, 0.3) !important; 
+}
+
+.btn-wit { 
+    color: var(--primary); 
+    border-color: rgba(0, 242, 254, 0.3) !important; 
+}
+
+.btn-main, .btn-action, .btn-claim, .submit-btn, .btn-join {
+    width: 100%;
+    background: linear-gradient(135deg, var(--primary), #0088cc);
+    border: none;
+    border-radius: 14px;
+    padding: 12px;
+    color: #000;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: 'Syncopate';
+    font-size: 10px;
+    text-align: center;
+    transition: 0.3s;
+}
+
+.btn-main:active, .btn-claim:active { transform: scale(0.97); }
+
+.approve-btn {
+    background: var(--active-green);
+    color: #000;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-right: 5px;
+}
+
+.reject-btn {
+    background: var(--danger);
+    color: #fff;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* ========== সাইডবার (এডমিন) - ফিক্সড ========== */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 260px;
+    height: 100vh;
+    background: var(--card-solid);
+    border-right: 1px solid var(--border);
+    z-index: 1000;
+    overflow-y: auto;
+}
+
+.sidebar .logo-area {
+    padding: 20px;
+    font-family: 'Syncopate';
+    font-size: 18px;
+    color: var(--primary);
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+}
+
+.nav-links {
+    list-style: none;
+    padding: 20px 0;
+}
+
+.nav-links li {
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: 0.3s;
+    color: var(--text-muted);
+}
+
+.nav-links li:hover, .nav-links li.active {
+    color: var(--primary);
+    background: rgba(0, 242, 254, 0.08);
+    border-radius: 10px;
+}
+
+/* ========== মেইন কন্টেন্ট ========== */
+.main-content {
+    margin-left: 260px;
+    width: calc(100% - 260px);
+    min-height: 100vh;
+    padding: 20px;
+    position: relative;
+}
+
+/* ========== পেজ সেকশন কন্ট্রোল ========== */
+.page-section {
+    display: none;
+    width: 100%;
+}
+
+.page-section.active {
+    display: block !important;
+}
+
+.main-content .page-section.active {
+    position: relative;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========== বটম নেভিগেশন - ফিক্সড ========== */
+.dock-container, .bottom-nav-container {
+    position: fixed;
+    bottom: 20px;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.dock-nav, .bottom-nav {
+    position: fixed !important;
+    bottom: 20px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 85% !important;
+    max-width: 340px !important;
+    height: 52px;
+    background: var(--card-solid) !important;
+    backdrop-filter: none !important;
+    border-radius: 35px !important; /* রাউন্ড শেপ */
+    border: 1px solid rgba(255, 255, 255, 0.1) !important; /* বর্ডার */
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+    z-index: 2000;
+}
+
+
+/* ৩. নেভিগেশন বাটনের আইকন */
+.dock-nav i, .bottom-nav i {
+    font-size: 20px !important;
+    color: #aaa;
+    cursor: pointer;
+    padding: 8px 16px;
+    transition: 0.2s;
+    border-radius: 30px;
+}
+
+/* ৪. হোভার করলে ইফেক্ট */
+.dock-nav i:hover, .bottom-nav i:hover {
+    color: var(--primary);
+    text-shadow: var(--neon-shadow);
+}
+
+/* ৫. একটিভ বাটনের কালার (স্ক্রিনশটের মতো) */
+.dock-nav i.active, .bottom-nav i.active {
+    color: #00f2fe !important;
+    background: rgba(0, 242, 254, 0.15) !important;
+    text-shadow: var(--neon-shadow);
+}
+
+/* ৬. নেভিগেশন টেক্সট (যেমন: Home, Task ইত্যাদি) */
+.nav-item {
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 10px;
+    text-align: center;
+    transition: 0.3s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.nav-item i {
+    font-size: 18px;
+    display: block;
+}
+
+.nav-item span {
+    font-size: 9px;
+}
+
+/* ইনপুট ফিল্ডের ব্যাকগ্রাউন্ড ও টেক্সট */
+input, textarea, select {
+    background: #0a0f1a !important;
+    color: #e0e0e0 !important;
+    border: 1px solid rgba(0, 242, 254, 0.2) !important;
+    border-radius: 14px;
+    padding: 12px;
+    outline: none;
+}
+
+/* ফোকাস করার সময় ইফেক্ট (এটা রাখুন, রিমুভ করবেন না) */
+input:focus, textarea:focus, select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 8px rgba(0, 242, 254, 0.3);
+}
+
+label {
+    font-size: 12px;
+    margin-bottom: 5px;
+    display: inline-block;
+    color: #9ca3af !important;
+}
+
+/* ========== টেবিল ========== */
+.request-table, .user-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.request-table th, .user-table th {
+    background: #1e293b;
+    color: var(--primary);
+    padding: 10px 8px;
+    text-align: left;
+    font-weight: 700;
+    border-bottom: 2px solid var(--primary);
+}
+
+.request-table td, .user-table td {
+    padding: 8px;
+    border-bottom: 1px solid #2d3a5e;
+}
+
+/* ========== ব্যালেন্স বক্স ========== */
+.header-bal-box, .bal-box {
+    background: rgba(0, 0, 0, 0.5);
+    padding: 8px 15px;
+    border-radius: 15px;
+    border: 1px solid var(--glass-border);
+    text-align: center;
+}
+
+/* ========== স্ট্যাটাস ডট ========== */
+#status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    transition: 0.5s;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.dot-online {
+    background: var(--active-green) !important;
+    box-shadow: 0 0 15px var(--active-green) !important;
+    animation: pulse 2s infinite;
+}
+
+.dot-offline {
+    background: var(--danger) !important;
+    box-shadow: 0 0 15px var(--danger) !important;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* ========== ব্যানার অ্যাড ========== */
+.banner-ad-box {
+    width: 100%;
+    min-height: 65px;
+    border-radius: 15px;
+    overflow: hidden;
+    margin: 15px 0;
+    border: 1px dashed var(--glass-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ========== জয়েন কার্ড ========== */
+.join-card {
+    border-left: 5px solid var(--danger);
+    transition: 0.5s;
+}
+
+.join-card.connected {
+    border-left-color: var(--active-green);
+}
+
+
+/* কন্টেইনার সব পেজে এক সাইজ রাখতে */
+.container {
+    padding: 15px;
+    max-width: 600px !important; /* স্ক্রিনশটের মতো চওড়া করার জন্য */
+    margin: 0 auto !important;
+    width: 100% !important;
+}
+
+/* প্রিমিয়াম কার্ডের স্টাইল যা বক্সগুলোকে ধারণ করে */
+.premium-card {
+    background: var(--card-solid) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 20px !important;
+    padding: 20px !important;
+    margin-bottom: 20px !important;
+    width: 100% !important;
+    color: #d1d5db !important;  /* ← এই লাইনটি যোগ করুন */
+}
+
+/* ========== হেল্পার ========== */
+.text-center { text-align: center; }
+.text-success { color: var(--active-green); }
+.text-danger { color: var(--danger); }
+.text-warning { color: var(--gold); }
+.text-cyan { color: var(--primary); }
+.mt-2 { margin-top: 10px; }
+.mb-2 { margin-bottom: 10px; }
+.hidden { display: none; }
+
+/* ========== মোবাইল রেস্পন্সিভ ========== */
+@media (max-width: 768px) {
+    .sidebar {
+        display: none;
+    }
+
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+        padding: 15px;
+        padding-bottom: 80px;
+    }
+
+    .action-btn {
+        height: 65px !important;
+        font-size: 8px !important;
+    }
+
+    .action-btn i {
+        font-size: 16px !important;
+    }
+
+    .dock-nav, .bottom-nav {
+        height: 55px !important;
+        width: 95% !important;
+    }
+
+    .nav-item i {
+        font-size: 16px;
+    }
+
+    .nav-item span {
+        font-size: 8px;
+    }
+
+    .grid-2, .grid-3 {
+        gap: 6px;
+    }
+
+    .row {
+        grid-template-columns: 1fr;
+    }
+   }
+
+
+/* স্ট্যাটাস ব্যাজ - সফল/অনুমোদিত */
+.status-success, .status-approved, .approved {
+    background: rgba(0, 255, 136, 0.15) !important;
+    color: #00ff88 !important;
+    border: 1px solid rgba(0, 255, 136, 0.3) !important;
+    padding: 4px 10px !important;
+    border-radius: 20px !important;
+    font-size: 10px !important;
+    font-weight: bold !important;
+    display: inline-block !important;
+}
+
+/* স্ট্যাটাস ব্যাজ - পেন্ডিং */
+.status-pending, .pending {
+    background: rgba(255, 170, 0, 0.15) !important;
+    color: #ffaa00 !important;
+    border: 1px solid rgba(255, 170, 0, 0.3) !important;
+    padding: 4px 10px !important;
+    border-radius: 20px !important;
+    font-size: 10px !important;
+    font-weight: bold !important;
+    display: inline-block !important;
+}
+
+/* স্ট্যাটাস ব্যাজ - রিজেক্টেড/ব্যর্থ */
+.status-rejected, .status-failed, .rejected {
+    background: rgba(255, 0, 85, 0.15) !important;
+    color: #ff5555 !important;
+    border: 1px solid rgba(255, 0, 85, 0.3) !important;
+    padding: 4px 10px !important;
+    border-radius: 20px !important;
+    font-size: 10px !important;
+    font-weight: bold !important;
+    display: inline-block !important;
+}
+
+/* পেমেন্ট কার্ড */
+.payment-card, .history-card {
+    background: var(--card-solid) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 16px !important;
+    padding: 15px !important;
+    margin-bottom: 12px !important;
+    color: #d1d5db !important;
+}
+
+/* পরিমাণের কালার */
+.amount-success {
+    color: var(--active-green) !important;
+    font-weight: bold !important;
+}
+
+.amount-danger {
+    color: var(--danger) !important;
+    font-weight: bold !important;
+}
+
+/* টেবিল স্টাইল */
+.payment-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.payment-table th {
+    background: #1e293b;
+    color: var(--primary);
+    padding: 10px;
+    text-align: left;
+    border-bottom: 2px solid var(--primary);
+}
+
+.payment-table td {
+    padding: 10px;
+    border-bottom: 1px solid #2d3a5e;
+}
+
+/* ========== টেক্সট কন্ট্রাস্ট ফিক্স ========== */
+
+/* প্লেসহোল্ডারের রং */
+::placeholder {
+    color: #5a6e7c !important;
+    opacity: 1;
+}
+
+/* ছোট টেক্সট (small) */
+small {
+    color: #7e8c9e !important;
+}
+
+/* হেল্পার টেক্সট */
+.text-muted, .card-title {
+    color: #9ca3af !important;
+}
+
+/* এডমিন প্যানেল লগইন কন্ট্রোল */
+.page-section {
+    display: none !important;
+}
+
+.page-section.active {
+    display: block !important;
+}
+
+/* লগইন করার আগে সবকিছু লুকান */
+body:not(.logged-in) .sidebar,
+body:not(.logged-in) .main-content,
+body:not(.logged-in) .bottom-nav {
+    display: none;
+}
+
+/* লগইন করার পর দেখান */
+body.logged-in .sidebar,
+body.logged-in .main-content,
+body.logged-in .bottom-nav {
+    display: block;
+}
+
+body.logged-in .sidebar {
+    display: block;
+}
+
+body.logged-in .main-content {
+    display: block;
+}
+
+body.logged-in .bottom-nav {
+    display: flex;
+}
+
+/* ========== এডমিন লগইন ওভারলে কন্ট্রোল ========== */
+#admin-login-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg, #020617);
+    background-image: var(--bg-gradient);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* লগইন করার আগে সবকিছু লুকান */
+body:not(.logged-in) .sidebar,
+body:not(.logged-in) .main-content,
+body:not(.logged-in) .bottom-nav,
+body:not(.logged-in) .bottom-nav-container,
+body:not(.logged-in) .dock-container {
+    display: none !important;
+}
+
+/* লগইন করার পর সবকিছু দেখান */
+body.logged-in .sidebar,
+body.logged-in .main-content {
+    display: block !important;
+}
+
+body.logged-in .bottom-nav,
+body.logged-in .bottom-nav-container,
+body.logged-in .dock-container {
+    display: flex !important;
+}
+
+/* লগইন করার পর ওভারলে লুকান */
+body.logged-in #admin-login-overlay {
+    display: none !important;
+}
+
+/* পেজ সেকশন কন্ট্রোল - নিশ্চিত করুন */
+.page-section {
+    display: none !important;
+}
+
+.page-section.active {
+    display: block !important;
+}
+
+
+/* ========== লগইন ওভারলে সেন্টার ফিক্স ========== */
+#admin-login-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg, #020617);
+    background-image: var(--bg-gradient);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#admin-login-overlay > div {
+    width: 90%;
+    max-width: 350px;
+    margin: 0 auto;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+#admin-login-overlay input {
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
+    margin: 15px 0;
+}
+
+#admin-login-overlay button {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* মোবাইল ডিভাইসের জন্য স্পেশাল */
+@media (max-width: 768px) {
+    #admin-login-overlay > div {
+        width: 85%;
+        padding: 25px 20px !important;
+    }
+
+    #admin-login-overlay input {
+        font-size: 20px !important;
+        padding: 12px !important;
+    }
+}
+
+
+/* ================================================================
+   মোবাইলে বাটন নিচে আনার জন্য ফিক্স
+   ================================================================ */
+
+@media (max-width: 768px) {
+    /* প্রতিটি premium-card এর ভিতরের এলিমেন্টগুলো সাজান */
+    .premium-card {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    /* শিরোনাম উপরে থাকবে */
+    .premium-card .card-title {
+        order: 0;
+        margin-bottom: 5px;
+    }
+
+    /* সব ইনপুট, সিলেক্ট, টেক্সটএরিয়া মাঝখানে */
+    .premium-card input,
+    .premium-card select,
+    .premium-card textarea {
+        order: 1;
+    }
+
+    /* লেবেলগুলো ইনপুটের আগে */
+    .premium-card label {
+        order: 1;
+    }
+
+    /* ছোট টেক্সট (small) */
+    .premium-card small {
+        order: 2;
+    }
+
+    /* সব বাটন একদম নিচে */
+    .premium-card .btn-main,
+    .premium-card .btn-action,
+    .premium-card .submit-btn,
+    .premium-card .btn-join {
+        order: 10;
+        margin-top: 10px;
+    }
+
+    /* রো ক্লাসের জন্য */
+    .premium-card .row {
+        order: 1;
+        width: 100%;
+    }
+
+    /* রো এর ভিতরের এলিমেন্ট */
+    .premium-card .row > * {
+        order: 0;
+    }
+
+    /* হেডিং (h1, h2, h3) */
+    .premium-card h1,
+    .premium-card h2,
+    .premium-card h3,
+    .premium-card h4 {
+        order: 0;
+    }
+
+    /* প্রাইস ডিসপ্লে (h1) স্পেশাল */
+    .premium-card #live-price-display {
+        order: 0;
+        text-align: center;
+        width: 100%;
+    }
+}
