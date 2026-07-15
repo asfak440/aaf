@@ -15,7 +15,7 @@ tasks_bp = Blueprint('tasks', __name__, url_prefix='/tasks')
 @tasks_bp.route('/')
 @login_required
 def task():
-    return render_template("task.html")
+    return render_template("tasks.html")
 
 @tasks_bp.route('/order')
 @login_required
