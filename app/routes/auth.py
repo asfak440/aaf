@@ -11,16 +11,15 @@ from app.utils.helpers import normalize_phone, run_async, get_admin_config, upda
 auth_bp = Blueprint('auth', __name__)
 
 # ========== PAGE ROUTES ==========
-@auth_bp.route('/login')
-def login_redirect():
-    return redirect(url_for('auth.login'))
+@auth_bp.route('/login', methods=['GET', 'POST'])
+def login():
+    return render_template("login.html")
 
 @auth_bp.route('/admin/login')
 def admin_login_page():
     if session.get("admin_logged_in"):
         return redirect(url_for("admin.admin_dashboard"))
     return render_template("admin/login.html")
-
 # ========== API ROUTES ==========
 @auth_bp.route('/api/send_otp', methods=["POST"])
 def send_otp():
