@@ -194,7 +194,7 @@ async function sendOTP(){
     if (referrerId) requestBody.ref = referrerId;
 
     try{
-        let res = await fetch("/api/send_otp",{
+        let res = await fetch("/auth/api/send_otp",{
             method: "POST",
             credentials: "include",
             headers: {"Content-Type":"application/json"},
@@ -235,7 +235,7 @@ async function verifyOTP(){
     if (referrerId) body.ref = referrerId;
 
     try{
-        let res = await fetch("/api/verify_login",{
+        let res = await fetch("/auth/api/verify_login",{
             method:"POST",
             credentials:"include",
             headers:{"Content-Type":"application/json"},
@@ -277,7 +277,7 @@ async function verifyPassword(){
     if (referrerId) body.ref = referrerId;
 
     try{
-        let res = await fetch("/api/verify_login",{
+        let res = await fetch("/auth/api/verify_login",{
             method:"POST",
             credentials:"include",
             headers:{"Content-Type":"application/json"},
