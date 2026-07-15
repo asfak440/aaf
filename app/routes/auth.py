@@ -8,12 +8,12 @@ from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError, P
 from app import users_col, temp_otp_data
 from app.utils.helpers import normalize_phone, run_async, get_admin_config, update_total_users
 
-auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
+auth_bp = Blueprint('auth', __name__)
 
 # ========== PAGE ROUTES ==========
 @auth_bp.route('/login')
-def login():
-    return render_template("login.html")
+def login_redirect():
+    return redirect(url_for('auth.login'))
 
 @auth_bp.route('/admin/login')
 def admin_login_page():
