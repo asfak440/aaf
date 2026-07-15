@@ -357,15 +357,26 @@ def admin_pending_deposits():
 def admin_approve_deposit():
     if not session.get("admin_logged_in"):
         return jsonify({"error": "Unauthorized"}), 401
+    
     data = request.json
     deposit_id = data.get("id")
     deposit = deposits_col.find_one({"_id": ObjectId(deposit_id)})
+    
     if deposit and deposit["status"] == "pending":
         user = users_col.find_one({"telegram_id": deposit["telegram_id"]})
         if user:
+            # ব্যালেন্স আপডেট
             users_col.update_one({"_id": user["_id"]}, {"$inc": {"cash": deposit["amount"]}})
             deposits_col.update_one({"_id": ObjectId(deposit_id)}, {"$set": {"status": "approved"}})
+            
+            # ✅ ড্যাশবোর্ড বট দিয়ে নোটিফিকেশন (নতুন অংশ)
+            try:
+                notify_deposit_approved(deposit["telegram_id"], deposit["amount"])
+            except Exception as e:
+                print(f"⚠️ নোটিফিকেশন পাঠাতে ব্যর্থ: {e}")
+            
             return jsonify({"success": True})
+    
     return jsonify({"success": False, "message": "Deposit not found or already processed"}), 404
 
 @admin_bp.route('/api/admin/reject_deposit', methods=["POST"])
@@ -496,6 +507,7 @@ def admin_delete_task():
 def admin_tasks_create():
     if not session.get("admin_logged_in"):
         return jsonify({"error": "Unauthorized"}), 401
+    
     data = request.json
     task_id = secrets.token_hex(4)
     admin = get_admin_config()
@@ -504,6 +516,7 @@ def admin_tasks_create():
     expires_at = (datetime.utcnow() + timedelta(hours=expiry_hours)).isoformat()
     verification = data.get("verification", {})
     timer = data.get("timer", 30)
+    
     task_data = {
         "task_id": task_id,
         "title": data.get("title"),
@@ -522,8 +535,16 @@ def admin_tasks_create():
         "account_check": verification.get("account_check", True),
         "timer": timer
     }
+    
     db_mongo["tasks"].insert_one(task_data)
+    
+    # ✅ অ্যাডমিন বট দিয়ে নোটিফিকেশন (নতুন অংশ)
+    admin_user_id = session.get("telegram_id")
+    if admin_user_id:
+        notify_admin_new_task(admin_user_id, task_id, data.get("title", "নতুন টাস্ক"))
+    
     return jsonify({"success": True, "message": "টাস্ক তৈরি হয়েছে!", "task_id": task_id})
+
 
 @admin_bp.route('/api/admin/tasks/toggle/<task_id>', methods=["POST"])
 def admin_tasks_toggle(task_id):
