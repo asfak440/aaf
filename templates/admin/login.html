@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>AAF Admin Login</title>
-    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <div id="admin-login-overlay">
@@ -13,17 +13,20 @@
         </div>
     </div>
     <script>
-        async function handleLogin() {
-            const pin = document.getElementById('admin-pass').value;
-            const r = await fetch('/api/admin/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pin })
-            });
-            const d = await r.json();
-            if (d.ok) window.location.href = '/admin/dashboard';
-            else alert('Wrong PIN!');
-        }
-    </script>
+    // ✅ অ্যাডমিন API বেস URL
+    const ADMIN_API = window.location.origin + '/admin/api';
+
+    async function handleLogin() {
+        const pin = document.getElementById('admin-pass').value;
+        const r = await fetch(`${ADMIN_API}/admin/login`, {  // ← URL ঠিক করা
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pin })
+        });
+        const d = await r.json();
+        if (d.ok) window.location.href = '/admin/dashboard';
+        else alert('Wrong PIN!');
+    }
+    </script>  
 </body>
 </html>
