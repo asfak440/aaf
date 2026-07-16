@@ -475,7 +475,7 @@
 
         async function loadBanner() {
     try {
-        const res = await fetch(`${ADMIN_API}/user/me`, { credentials: 'include' });
+        const res = await fetch(`/api/user/me`, { credentials: 'include' });
         const data = await res.json();
 
         if (data.admin && data.admin.banner_image) {
