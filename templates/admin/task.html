@@ -234,7 +234,7 @@
         verification: { device_check, ip_check, account_check }
     };
 
-    fetch('${ADMIN_API}/admin/tasks/create`, {
+    fetch(`${ADMIN_API}/admin/tasks/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -266,7 +266,7 @@
     if (!container) return;
     container.innerHTML = 'লোড হচ্ছে...';
 
-    fetch('${ADMIN_API}/admin/tasks/list`, { credentials: 'include' })
+    fetch(`${ADMIN_API}/admin/tasks/list`, { credentials: 'include' })
     .then(r => r.json())
     .then(d => {
         if (!d.tasks || d.tasks.length === 0) {
@@ -311,7 +311,7 @@
         }
 
         function escapeHtml(text) {
-            if (!text) return "";
+            if (!text) return ""; 
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
@@ -367,7 +367,7 @@ async function deleteTask(taskId) {
             const default_expiry = document.getElementById('global_default_expiry').value;
             const ip_limit = document.getElementById('global_ip_limit').value;
 
-            fetch('${ADMIN_API}/admin/settings`, {
+            fetch(`${ADMIN_API}/admin/settings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -398,7 +398,7 @@ async function deleteTask(taskId) {
             if (!target || target <= 0) return alert('টার্গেট সংখ্যা দিন');
             if (!reward_amount || reward_amount <= 0) return alert('রিওয়ার্ড পরিমাণ দিন');
 
-            fetch('${ADMIN_API}/admin/milestone/save`, {
+            fetch(`${ADMIN_API}/admin/milestone/save`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -423,7 +423,7 @@ async function deleteTask(taskId) {
         // ========== 9. মাইলস্টোন লিস্ট ==========
         function loadMilestones() {
             const container = document.getElementById('milestone-list');
-            fetch('${ADMIN_API}/admin/milestones/list`, { credentials: 'include' })
+            fetch(`${ADMIN_API}/admin/milestones/list`, { credentials: 'include' })
             .then(r => r.json())
             .then(d => {
                 if (!d.milestones || d.milestones.length === 0) {
