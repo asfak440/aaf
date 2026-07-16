@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>Tasks - AAF Admin</title>
-    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
@@ -163,7 +163,7 @@
     <!-- ✅ JavaScript (Tasks এর জন্য) -->
     <!-- ============================================================ -->
     <script>
-        const API = window.location.origin;
+        const ADMIN_API = window.location.origin + '/admin/api';
 
         // ========== 1. সব data-action হ্যান্ডেল করুন ==========
         document.addEventListener('click', function(e) {
@@ -200,12 +200,13 @@
         // ========== 2. লগআউট ==========
         function logout() {
             if(confirm('Are you sure?')) {
-                fetch('/api/admin/logout', { method: 'POST' })
+                fetch(`${ADMIN_API}/admin/logout', { method: 'POST' })
                 .then(() => window.location.href = '/admin/login');
             }
         }
 
         // ========== 3. টাস্ক তৈরি ==========
+        
         function createNewTask() {
     const title = document.getElementById('task_title').value.trim();
     const link = document.getElementById('task_link').value.trim();
@@ -233,7 +234,7 @@
         verification: { device_check, ip_check, account_check }
     };
 
-    fetch('/api/admin/tasks/create', {
+    fetch('${ADMIN_API}/admin/tasks/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -265,7 +266,7 @@
     if (!container) return;
     container.innerHTML = 'লোড হচ্ছে...';
 
-    fetch('/api/admin/tasks/list', { credentials: 'include' })
+    fetch('${ADMIN_API}/admin/tasks/list', { credentials: 'include' })
     .then(r => r.json())
     .then(d => {
         if (!d.tasks || d.tasks.length === 0) {
@@ -319,7 +320,7 @@
         // ========== 5. টাস্ক টগল ==========
 async function toggleTask(taskId) {
     try {
-        const res = await fetch(`/api/admin/tasks/toggle/${taskId}`, { 
+        const res = await fetch(`${ADMIN_API}/admin/tasks/toggle/${taskId}`, { 
             method: 'POST', 
             credentials: 'include' 
         });
@@ -342,7 +343,7 @@ async function deleteTask(taskId) {
     if (!confirm('🚨 টাস্ক পুরোপুরি ডিলিট করতে চান? (পুনরুদ্ধার করা যাবে না!)')) return;
 
     try {
-        const res = await fetch(`/api/admin/tasks/delete/${taskId}`, { 
+        const res = await fetch(`${ADMIN_API}/admin/tasks/delete/${taskId}`, { 
             method: 'DELETE', 
             credentials: 'include' 
         });
@@ -366,7 +367,7 @@ async function deleteTask(taskId) {
             const default_expiry = document.getElementById('global_default_expiry').value;
             const ip_limit = document.getElementById('global_ip_limit').value;
 
-            fetch('/api/admin/settings', {
+            fetch('${ADMIN_API}/admin/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -397,7 +398,7 @@ async function deleteTask(taskId) {
             if (!target || target <= 0) return alert('টার্গেট সংখ্যা দিন');
             if (!reward_amount || reward_amount <= 0) return alert('রিওয়ার্ড পরিমাণ দিন');
 
-            fetch('/api/admin/milestone/save', {
+            fetch('${ADMIN_API}/admin/milestone/save', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -422,7 +423,7 @@ async function deleteTask(taskId) {
         // ========== 9. মাইলস্টোন লিস্ট ==========
         function loadMilestones() {
             const container = document.getElementById('milestone-list');
-            fetch('/api/admin/milestones/list', { credentials: 'include' })
+            fetch('${ADMIN_API}/admin/milestones/list', { credentials: 'include' })
             .then(r => r.json())
             .then(d => {
                 if (!d.milestones || d.milestones.length === 0) {
@@ -465,7 +466,7 @@ async function deleteTask(taskId) {
     // ===== মাইলস্টোন অ্যাকশন =====
     else if (action === 'delete-milestone') {
         if (!confirm('মাইলস্টোন ডিলিট করবেন?')) return;
-        fetch('/api/admin/milestone/delete', {
+        fetch('${ADMIN_API}/admin/milestone/delete', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -485,7 +486,7 @@ async function deleteTask(taskId) {
 
         // ========== 11. অর্ডার রেট ==========
         function loadOrderRates() {
-            fetch('/api/admin/order_rates', { credentials: 'include' })
+            fetch('${ADMIN_API}/admin/order_rates', { credentials: 'include' })
             .then(r => r.json())
             .then(data => {
                 if (data.rates) {
@@ -508,7 +509,7 @@ async function deleteTask(taskId) {
                 comments: parseFloat(document.getElementById('rate_comments').value) || 0.50
             };
 
-            fetch('/api/admin/order_rates', {
+            fetch('${ADMIN_API}/admin/order_rates', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -528,7 +529,7 @@ async function deleteTask(taskId) {
     if (!confirm('সব ক্যাশ ক্লিয়ার করতে চান?')) return;
 
     try {
-        const res = await fetch('/api/admin/clear_cache', {
+        const res = await fetch('${ADMIN_API}/admin/clear_cache', {
             method: 'POST',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
