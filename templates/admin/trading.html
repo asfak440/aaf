@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>Trading - AAF Admin</title>
-    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
@@ -61,7 +61,7 @@
     <!-- ✅ JavaScript (Trading এর জন্য) -->
     <!-- ============================================================ -->
     <script>
-        const API = window.location.origin;
+        const ADMIN_API = window.location.origin + '/admin/api';
 
         // ========== 1. সব data-action হ্যান্ডেল করুন ==========
         document.addEventListener('click', function(e) {
@@ -88,7 +88,7 @@
         // ========== 2. লগআউট ==========
         function logout() {
             if(confirm('Are you sure?')) {
-                fetch('/api/admin/logout', { method: 'POST' })
+                fetch('${ADMIN_API}/admin/logout', { method: 'POST' })
                 .then(() => window.location.href = '/admin/login');
             }
         }
@@ -96,7 +96,7 @@
         // ========== 3. লাইভ প্রাইস লোড ==========
         async function loadLivePrice() {
             try {
-                const res = await fetch(`${API}/api/market/price`);
+                const res = await fetch(`${ADMIN_API}/market/price`);
                 const d = await res.json();
                 const display = document.getElementById('live-price-display');
                 if (display) display.innerText = "৳ " + (d.live_price || d.price || 0).toFixed(2);
@@ -114,7 +114,7 @@
             }
             const newPrice = parseFloat(priceInput.value);
             try {
-                const response = await fetch('/api/admin/set_price', {
+                const response = await fetch('${ADMIN_API}/admin/set_price', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
@@ -142,7 +142,7 @@
             }
             const newFee = parseFloat(feeInput.value);
             try {
-                const response = await fetch('/api/admin/set_fee', {
+                const response = await fetch('${ADMIN_API}/admin/set_fee', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
@@ -168,7 +168,7 @@
             const impact = parseFloat(impactInput.value);
             const volatility = parseFloat(volatilityInput.value);
             try {
-                const response = await fetch('/api/admin/update_settings', {
+                const response = await fetch('${ADMIN_API}/admin/update_settings', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
@@ -191,7 +191,7 @@
         // ========== 7. অ্যাডমিন কনফিগ থেকে মান লোড ==========
         async function loadTradingConfig() {
             try {
-                const res = await fetch(`${API}/api/admin/config`, { credentials: 'include' });
+                const res = await fetch(`${ADMIN_API}/admin/config`, { credentials: 'include' });
                 const data = await res.json();
 
                 if (data.fee !== undefined) {
