@@ -173,7 +173,7 @@
         // ========== 2. লগআউট ==========
         function logout() {
             if(confirm('Are you sure?')) {
-                fetch('${ADMIN_API}/admin/logout', { method: 'POST' })
+                fetch(`${ADMIN_API}/admin/logout`, { method: 'POST' })
                 .then(() => window.location.href = '/admin/login');
             }
         }
@@ -184,7 +184,7 @@
             const cash = parseFloat(document.getElementById('user-bal').value);
             const aaf = parseFloat(document.getElementById('user-coins').value);
             if (!uid) return alert('ইউজার আইডি দিন');
-            const res = await fetch('${ADMIN_API}/admin/update_balance', {
+            const res = await fetch(`${ADMIN_API}/admin/update_balance`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -379,7 +379,7 @@
             if (!confirm(`"${fieldName}" ফিল্ডটি খালি করতে চান?`)) return;
             document.getElementById(elementId).value = '';
             try {
-                const res = await fetch('${ADMIN_API}/admin/clear_field', {
+                const res = await fetch(`${ADMIN_API}/admin/clear_field`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
@@ -402,7 +402,7 @@
     };
 
     try {
-        const res = await fetch('${ADMIN_API}/admin/update_settings', {
+        const res = await fetch(`${ADMIN_API}/admin/update_settings`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -424,7 +424,7 @@
         async function loadPendingClaims() {
             const container = document.getElementById('pending-claims-list');
             try {
-                const res = await fetch('${ADMIN_API}/admin/pending_claims', { credentials: 'include' });
+                const res = await fetch(`${ADMIN_API}/admin/pending_claims`, { credentials: 'include' });
                 const data = await res.json();
                 if (!data.claims || data.claims.length === 0) {
                     container.innerHTML = '<div>কোনো পেন্ডিং ক্লেইম নেই।</div>';
@@ -458,7 +458,7 @@
         });
 
         async function processClaim(claimId, action) {
-            const res = await fetch('${ADMIN_API}/admin/approve_claim', {
+            const res = await fetch(`${ADMIN_API}/admin/approve_claim`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -475,7 +475,7 @@
 
         async function loadBanner() {
     try {
-        const res = await fetch('${ADMIN_API}/user/me', { credentials: 'include' });
+        const res = await fetch(`${ADMIN_API}/user/me`, { credentials: 'include' });
         const data = await res.json();
 
         if (data.admin && data.admin.banner_image) {
