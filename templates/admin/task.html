@@ -466,7 +466,7 @@ async function deleteTask(taskId) {
     // ===== মাইলস্টোন অ্যাকশন =====
     else if (action === 'delete-milestone') {
         if (!confirm('মাইলস্টোন ডিলিট করবেন?')) return;
-        fetch('${ADMIN_API}/admin/milestone/delete', {
+        fetch(`${ADMIN_API}/admin/milestone/delete', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -486,7 +486,7 @@ async function deleteTask(taskId) {
 
         // ========== 11. অর্ডার রেট ==========
         function loadOrderRates() {
-            fetch('${ADMIN_API}/admin/order_rates`, { credentials: 'include' })
+            fetch(`${ADMIN_API}/admin/order_rates`, { credentials: 'include' })
             .then(r => r.json())
             .then(data => {
                 if (data.rates) {
@@ -509,7 +509,7 @@ async function deleteTask(taskId) {
                 comments: parseFloat(document.getElementById('rate_comments').value) || 0.50
             };
 
-            fetch('${ADMIN_API}/admin/order_rates`, {
+            fetch(`${ADMIN_API}/admin/order_rates`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -529,7 +529,7 @@ async function deleteTask(taskId) {
     if (!confirm('সব ক্যাশ ক্লিয়ার করতে চান?')) return;
 
     try {
-        const res = await fetch('${ADMIN_API}/admin/clear_cache`, {
+        const res = await fetch(`${ADMIN_API}/admin/clear_cache`, {
             method: 'POST',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
