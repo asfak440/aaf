@@ -190,7 +190,7 @@
         // ========== 2. লগআউট ==========
         function logout() {
             if(confirm('Are you sure?')) {
-                fetch(`${ADMIN_API}/admin/logout', { method: 'POST' })
+                fetch(`${ADMIN_API}/admin/logout`, { method: 'POST' })
                 .then(() => window.location.href = '/admin/login');
             }
         }
@@ -200,7 +200,7 @@
             if (!confirm(`"${fieldName}" ফিল্ডটি খালি করতে চান?`)) return;
             document.getElementById(elementId).value = '';
             try {
-                const res = await fetch(`${ADMIN_API}/admin/clear_field', {
+                const res = await fetch(`${ADMIN_API}/admin/clear_field`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
@@ -230,7 +230,7 @@
             };
 
             try {
-                const res = await fetch(`${ADMIN_API}/admin/update_settings', {
+                const res = await fetch(`${ADMIN_API}/admin/update_settings`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
@@ -356,7 +356,7 @@
     };
 
     try {
-        const res = await fetch(`${ADMIN_API}/admin/bots/save-all', {
+        const res = await fetch(`${ADMIN_API}/admin/bots/save-all`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -384,7 +384,7 @@
 // ========== 3. বট কনফিগ লোড ==========
       async function loadBotConfigs() {
     try {
-        const res = await fetch(`${ADMIN_API}/admin/bots/all', {
+        const res = await fetch(`${ADMIN_API}/admin/bots/all`, {
             credentials: 'include'
         });
         const data = await res.json();
