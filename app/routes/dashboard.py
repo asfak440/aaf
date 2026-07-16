@@ -26,54 +26,10 @@ def user_me():
         session.clear()
         return jsonify({"status": "error", "message": "user_not_found"})
     
-    # ✅ শুধু মাত্র যদি is_joined আপডেট করার প্রয়োজন হয়
-    # অথবা সম্পূর্ণভাবে সরিয়ে দিন (যেহেতু check_membership আপডেট করে)
-    try:
-        admin = get_admin_config()
-        bot_token = admin.get("bot_token", "")
-        channel_url = admin.get("channel_url", "")
-        
-        # ✅ শুধু মাত্র যদি bot_token এবং channel_url থাকে
-        if bot_token and channel_url:
-            import requests
-            
-            # চ্যানেল ইউজারনেম এক্সট্র্যাক্ট
-            if "t.me/" in channel_url:
-                channel_username = "@" + channel_url.split("t.me/")[-1].split("/")[0]
-            elif channel_url.startswith("@"):
-                channel_username = channel_url
-            else:
-                channel_username = "@" + channel_url
-            
-            user_tg_id = int(user.get("telegram_id"))
-            
-            # ✅ সঠিক API: getChatMember
-            url = f"https://api.telegram.org/bot{bot_token}/getChatMember"
-            params = {
-                "chat_id": channel_username,
-                "user_id": user_tg_id
-            }
-            response = requests.get(url, params=params, timeout=5)
-            
-            if response.status_code == 200:
-                data = response.json()
-                if data.get("ok"):
-                    status = data.get("result", {}).get("status", "")
-                    is_member = status in ("member", "administrator", "creator")
-                    
-                    # ✅ is_joined আপডেট করুন
-                    if user.get("is_joined") != is_member:
-                        users_col.update_one(
-                            {"_id": ObjectId(uid)},
-                            {"$set": {"is_joined": is_member}}
-                        )
-                        user = users_col.find_one({"_id": ObjectId(uid)})  # রিলোড
-    except Exception as e:
-        print(f"Membership check error: {e}")
-    
     admin = get_admin_config()
     wallet_data = admin.get("wallet", {"nagad": "", "bkash": ""})
     
+    # স্ট্যাটিস্টিক্স
     real_users = users_col.count_documents({})
     deposits = list(deposits_col.aggregate([
         {"$match": {"status": "approved"}},
@@ -112,7 +68,7 @@ def user_me():
         "aaf": user.get("aaf", 0),
         "refer_count": user.get("refer_count", 0),
         "tasks_done": user.get("tasks_done", 0),
-        "is_joined": user.get("is_joined", False),  # ✅ আপডেটেড
+        # ❌ is_joined সরিয়ে দেওয়া হয়েছে (ডাটাবেসে জমা হবে না)
         "phone": user.get("phone", "")
     }
     
@@ -131,7 +87,6 @@ def user_me():
         }
     }
     
-    # ✅ ক্যাশ কন্ট্রোল হেডার যোগ করুন
     response = jsonify({"status": "success", "user": safe_user, "admin": safe_admin})
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
     return response
@@ -222,6 +177,7 @@ def verify_join():
 @dashboard_bp.route('/api/check_membership', methods=["GET"])
 @login_required
 def check_membership():
+    """শুধু রিয়েল-টাইম চেক করবে, ডাটাবেসে কিছু সেভ করবে না"""
     uid = session.get("uid")
     if not uid:
         return jsonify({"is_member": False})
@@ -234,9 +190,9 @@ def check_membership():
     bot_token = admin.get("bot_token")
     channel_url = admin.get("channel_url", "")
     
-    # ✅ যদি bot_token না থাকে, ডাটাবেসের মান দেখান
+    # যদি bot_token না থাকে
     if not bot_token or not channel_url:
-        return jsonify({"is_member": user.get("is_joined", False)})
+        return jsonify({"is_member": False, "error": "Bot not configured"})
     
     try:
         user_tg_id = int(user.get("telegram_id"))
@@ -249,7 +205,7 @@ def check_membership():
         else:
             channel_username = "@" + channel_url
         
-        # টেলিগ্রাম API কল
+        # টেলিগ্রাম API কল (রিয়েল-টাইম)
         import requests
         url = f"https://api.telegram.org/bot{bot_token}/getChatMember?chat_id={channel_username}&user_id={user_tg_id}"
         resp = requests.get(url, headers={"Cache-Control": "no-cache"}, timeout=10)
@@ -261,24 +217,20 @@ def check_membership():
         else:
             is_member = False
         
-        # ✅ ডাটাবেস আপডেট করুন (শুধু পরিবর্তন হলে)
-        if user.get("is_joined") != is_member:
-            users_col.update_one(
-                {"_id": ObjectId(uid)}, 
-                {"$set": {"is_joined": is_member, "last_check": datetime.utcnow()}}
-            )
+        # ❌ ডাটাবেস আপডেট করছি না!
+        # শুধু রেজাল্ট রিটার্ন করছি
         
-        # ✅ ক্যাশ কন্ট্রোল হেডার যোগ করুন
-        response = jsonify({"is_member": is_member})
+        response = jsonify({
+            "is_member": is_member,
+            "status": status if data.get("ok") else "unknown",
+            "channel": channel_username
+        })
         response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
         return response
         
     except Exception as e:
         print(f"Check membership error: {e}")
-        # ✅ এরর হলেও ডাটাবেসের মান দেখান
-        return jsonify({"is_member": user.get("is_joined", False)})
-
-
+        return jsonify({"is_member": False, "error": str(e)})
 
 @dashboard_bp.route('/api/dashboard/stats')
 @login_required
