@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>Account - AAF Admin</title>
-    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/static/style.css">
     
 </head>
 <body>
@@ -129,7 +129,7 @@
     <!-- ✅ JavaScript (Account এর জন্য) -->
     <!-- ============================================================ -->
     <script>
-        const API = window.location.origin;
+        const ADMIN_API = window.location.origin + '/admin/api';
         let selectedSessionOwner = '';
 
         // ========== 1. সব data-action হ্যান্ডেল করুন ==========
@@ -173,7 +173,7 @@
         // ========== 2. লগআউট ==========
         function logout() {
             if(confirm('Are you sure?')) {
-                fetch('/api/admin/logout', { method: 'POST' })
+                fetch('${ADMIN_API}/admin/logout', { method: 'POST' })
                 .then(() => window.location.href = '/admin/login');
             }
         }
@@ -184,7 +184,7 @@
             const cash = parseFloat(document.getElementById('user-bal').value);
             const aaf = parseFloat(document.getElementById('user-coins').value);
             if (!uid) return alert('ইউজার আইডি দিন');
-            const res = await fetch('/api/admin/update_balance', {
+            const res = await fetch('${ADMIN_API}/admin/update_balance', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -212,7 +212,7 @@
         async function loadUsers() {
             const box = document.getElementById('member-list-body');
             try {
-                const r = await fetch(`${API}/api/admin/users`, { credentials: 'include' });
+                const r = await fetch(`${ADMIN_API}/admin/users`, { credentials: 'include' });
                 const d = await r.json();
                 if (r.status === 401) {
                     box.innerHTML = `<div>Please login as admin first.</div>`;
@@ -307,7 +307,7 @@
             contentDiv.innerHTML = '⏳ লোড হচ্ছে...';
             resultDiv.style.display = 'block';
 
-            let apiUrl = `/api/user/check_stat?link=${encodeURIComponent(link)}`;
+            let apiUrl = `${ADMIN_API}/user/check_stat?link=${encodeURIComponent(link)}`;
             if (selectedSessionOwner) {
                 apiUrl += `&session_owner=${selectedSessionOwner}`;
             }
@@ -379,7 +379,7 @@
             if (!confirm(`"${fieldName}" ফিল্ডটি খালি করতে চান?`)) return;
             document.getElementById(elementId).value = '';
             try {
-                const res = await fetch('/api/admin/clear_field', {
+                const res = await fetch('${ADMIN_API}/admin/clear_field', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
@@ -402,7 +402,7 @@
     };
 
     try {
-        const res = await fetch('/api/admin/update_settings', {
+        const res = await fetch('${ADMIN_API}/admin/update_settings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -424,7 +424,7 @@
         async function loadPendingClaims() {
             const container = document.getElementById('pending-claims-list');
             try {
-                const res = await fetch('/api/admin/pending_claims', { credentials: 'include' });
+                const res = await fetch('${ADMIN_API}/admin/pending_claims', { credentials: 'include' });
                 const data = await res.json();
                 if (!data.claims || data.claims.length === 0) {
                     container.innerHTML = '<div>কোনো পেন্ডিং ক্লেইম নেই।</div>';
@@ -458,7 +458,7 @@
         });
 
         async function processClaim(claimId, action) {
-            const res = await fetch('/api/admin/approve_claim', {
+            const res = await fetch('${ADMIN_API}/admin/approve_claim', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -475,7 +475,7 @@
 
         async function loadBanner() {
     try {
-        const res = await fetch('/api/user/me', { credentials: 'include' });
+        const res = await fetch('${ADMIN_API}/user/me', { credentials: 'include' });
         const data = await res.json();
 
         if (data.admin && data.admin.banner_image) {
