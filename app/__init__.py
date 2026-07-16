@@ -102,7 +102,7 @@ def create_app():
     app.register_blueprint(trading_bp)
     app.register_blueprint(wallet_bp)
     app.register_blueprint(account_bp)
-    app.register_blueprint(admin_bp)
+    app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(api_bp)
 
     # ========== Start Background Threads ==========
