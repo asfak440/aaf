@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>Wallet - AAF Admin</title>
-    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
@@ -52,7 +52,7 @@
     <!-- ✅ JavaScript (Wallet এর জন্য) -->
     <!-- ============================================================ -->
     <script>
-        const API = window.location.origin;
+        const ADMIN_API = window.location.origin + '/admin/api';
 
         // ========== 1. সব data-action হ্যান্ডেল করুন ==========
         document.addEventListener('click', function(e) {
@@ -86,7 +86,7 @@
         // ========== 2. লগআউট ==========
         function logout() {
             if(confirm('Are you sure?')) {
-                fetch('/api/admin/logout', { method: 'POST' })
+                fetch('${ADMIN_API}/admin/logout', { method: 'POST' })
                 .then(() => window.location.href = '/admin/login');
             }
         }
@@ -98,7 +98,7 @@
             const walletPopupAd = document.getElementById('wallet_popup_ad')?.value || '';
 
             try {
-                const res = await fetch('/api/admin/update_wallets', {
+                const res = await fetch('${ADMIN_API}/admin/update_wallets', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
@@ -123,7 +123,7 @@
             if (!container) return;
 
             try {
-                const res = await fetch('/api/admin/pending_deposits', { credentials: 'include' });
+                const res = await fetch('${ADMIN_API}/admin/pending_deposits', { credentials: 'include' });
                 const data = await res.json();
 
                 if (!data.deposits || data.deposits.length === 0) {
@@ -172,7 +172,7 @@
 
         // ========== 5. ডিপোজিট অনুমোদন/বাতিল ==========
         async function approveDeposit(id) {
-            const res = await fetch('/api/admin/approve_deposit', {
+            const res = await fetch('${ADMIN_API}/admin/approve_deposit', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -188,7 +188,7 @@
         }
 
         async function rejectDeposit(id) {
-            const res = await fetch('/api/admin/reject_deposit', {
+            const res = await fetch('${ADMIN_API}/admin/reject_deposit', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -209,7 +209,7 @@
             if (!container) return;
 
             try {
-                const res = await fetch('/api/admin/withdraws', { credentials: 'include' });
+                const res = await fetch('/${ADMIN_API}/admin/withdraws', { credentials: 'include' });
                 const data = await res.json();
 
                 if (!data.list || data.list.length === 0) {
@@ -261,7 +261,7 @@
 
         // ========== 7. উইথড্র অনুমোদন/বাতিল ==========
         async function approveWithdraw(id) {
-            const res = await fetch('/api/admin/withdraw/approve', {
+            const res = await fetch('${ADMIN_API}/admin/withdraw/approve', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -280,7 +280,7 @@
             if (!confirm("উইথড্র রিকোয়েস্টটি বাতিল করতে চান?")) return;
 
             try {
-                const res = await fetch('/api/admin/reject_withdraw', {
+                const res = await fetch('${ADMIN_API}/admin/reject_withdraw', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
@@ -311,7 +311,7 @@
         // ========== 9. অ্যাডমিন স্ট্যাটস লোড (ওয়ালেটের জন্য) ==========
         async function loadAdminStats() {
             try {
-                const res = await fetch(`${API}/api/admin/config`, { credentials: 'include' });
+                const res = await fetch(`${ADMIN_API}/admin/config`, { credentials: 'include' });
                 const data = await res.json();
 
                 if (data.wallet) {
