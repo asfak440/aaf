@@ -20,56 +20,88 @@ def user_me():
     uid = session.get("uid")
     if not uid:
         return jsonify({"status": "error", "message": "session_expired"})
+    
     user = users_col.find_one({"_id": ObjectId(uid)})
     if not user:
         session.clear()
         return jsonify({"status": "error", "message": "user_not_found"})
+    
+    # ✅ শুধু মাত্র যদি is_joined আপডেট করার প্রয়োজন হয়
+    # অথবা সম্পূর্ণভাবে সরিয়ে দিন (যেহেতু check_membership আপডেট করে)
     try:
-        bot_token = get_admin_config().get("bot_token", "")
-        if bot_token:
+        admin = get_admin_config()
+        bot_token = admin.get("bot_token", "")
+        channel_url = admin.get("channel_url", "")
+        
+        # ✅ শুধু মাত্র যদি bot_token এবং channel_url থাকে
+        if bot_token and channel_url:
             import requests
-            url = f"https://api.telegram.org/bot{bot_token}/getChat"
-            params = {"chat_id": user.get("telegram_id")}
+            
+            # চ্যানেল ইউজারনেম এক্সট্র্যাক্ট
+            if "t.me/" in channel_url:
+                channel_username = "@" + channel_url.split("t.me/")[-1].split("/")[0]
+            elif channel_url.startswith("@"):
+                channel_username = channel_url
+            else:
+                channel_username = "@" + channel_url
+            
+            user_tg_id = int(user.get("telegram_id"))
+            
+            # ✅ সঠিক API: getChatMember
+            url = f"https://api.telegram.org/bot{bot_token}/getChatMember"
+            params = {
+                "chat_id": channel_username,
+                "user_id": user_tg_id
+            }
             response = requests.get(url, params=params, timeout=5)
+            
             if response.status_code == 200:
-                tg_data = response.json()
-                if tg_data.get("ok"):
-                    tg_user = tg_data.get("result", {})
-                    users_col.update_one(
-                        {"_id": ObjectId(uid)},
-                        {"$set": {
-                            "first_name": tg_user.get("first_name", user.get("first_name", "")),
-                            "last_name": tg_user.get("last_name", user.get("last_name", "")),
-                            "username": tg_user.get("username", user.get("username", ""))
-                        }}
-                    )
-                    user = users_col.find_one({"_id": ObjectId(uid)})
+                data = response.json()
+                if data.get("ok"):
+                    status = data.get("result", {}).get("status", "")
+                    is_member = status in ("member", "administrator", "creator")
+                    
+                    # ✅ is_joined আপডেট করুন
+                    if user.get("is_joined") != is_member:
+                        users_col.update_one(
+                            {"_id": ObjectId(uid)},
+                            {"$set": {"is_joined": is_member}}
+                        )
+                        user = users_col.find_one({"_id": ObjectId(uid)})  # রিলোড
     except Exception as e:
-        print(f"Telegram sync error: {e}")
+        print(f"Membership check error: {e}")
+    
     admin = get_admin_config()
     wallet_data = admin.get("wallet", {"nagad": "", "bkash": ""})
+    
     real_users = users_col.count_documents({})
     deposits = list(deposits_col.aggregate([
         {"$match": {"status": "approved"}},
         {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
     ]))
     total_deposit = deposits[0]["total"] if deposits else 0
+    
     withdraws = list(withdraws_col.aggregate([
         {"$match": {"status": "approved"}},
         {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
     ]))
     total_withdraw = withdraws[0]["total"] if withdraws else 0
+    
     auto_income = total_deposit - total_withdraw
+    
     trades = list(trades_col.aggregate([
         {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
     ]))
     auto_trading = trades[0]["total"] if trades else 0
+    
     manual_income = admin.get("server_income", 0)
     manual_trading = admin.get("server_trading", 0)
     manual_users = admin.get("extra_users", 0)
+    
     final_income = auto_income + manual_income
     final_trading = auto_trading + manual_trading
     final_users = real_users + manual_users
+    
     safe_user = {
         "_id": str(user["_id"]),
         "telegram_id": user.get("telegram_id"),
@@ -80,9 +112,10 @@ def user_me():
         "aaf": user.get("aaf", 0),
         "refer_count": user.get("refer_count", 0),
         "tasks_done": user.get("tasks_done", 0),
-        "is_joined": user.get("is_joined", False),
+        "is_joined": user.get("is_joined", False),  # ✅ আপডেটেড
         "phone": user.get("phone", "")
     }
+    
     safe_admin = {
         "live_price": admin.get("live_price", 1.0),
         "trading_fee": admin.get("trading_fee", 0.5),
@@ -97,8 +130,12 @@ def user_me():
             "bkash": wallet_data.get("bkash", "")
         }
     }
-    return jsonify({"status": "success", "user": safe_user, "admin": safe_admin})
-
+    
+    # ✅ ক্যাশ কন্ট্রোল হেডার যোগ করুন
+    response = jsonify({"status": "success", "user": safe_user, "admin": safe_admin})
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+    return response
+    
 @dashboard_bp.route('/api/user/data/<telegram_id>')
 def user_data(telegram_id):
     uid = session.get("uid")
@@ -188,39 +225,60 @@ def check_membership():
     uid = session.get("uid")
     if not uid:
         return jsonify({"is_member": False})
+    
     user = users_col.find_one({"_id": ObjectId(uid)})
     if not user:
         return jsonify({"is_member": False})
+    
     admin = get_admin_config()
     bot_token = admin.get("bot_token")
     channel_url = admin.get("channel_url", "")
+    
+    # ✅ যদি bot_token না থাকে, ডাটাবেসের মান দেখান
     if not bot_token or not channel_url:
         return jsonify({"is_member": user.get("is_joined", False)})
+    
     try:
         user_tg_id = int(user.get("telegram_id"))
+        
+        # চ্যানেল ইউজারনেম এক্সট্র্যাক্ট
         if "t.me/" in channel_url:
             channel_username = "@" + channel_url.split("t.me/")[-1].split("/")[0]
         elif channel_url.startswith("@"):
             channel_username = channel_url
         else:
             channel_username = "@" + channel_url
+        
+        # টেলিগ্রাম API কল
         import requests
         url = f"https://api.telegram.org/bot{bot_token}/getChatMember?chat_id={channel_username}&user_id={user_tg_id}"
         resp = requests.get(url, headers={"Cache-Control": "no-cache"}, timeout=10)
         data = resp.json()
+        
         if data.get("ok"):
             status = data["result"]["status"]
             is_member = status in ("member", "administrator", "creator")
         else:
             is_member = False
-        new_joined = is_member
-        if user.get("is_joined") != new_joined:
-            users_col.update_one({"_id": ObjectId(uid)}, {"$set": {"is_joined": new_joined}})
+        
+        # ✅ ডাটাবেস আপডেট করুন (শুধু পরিবর্তন হলে)
+        if user.get("is_joined") != is_member:
+            users_col.update_one(
+                {"_id": ObjectId(uid)}, 
+                {"$set": {"is_joined": is_member, "last_check": datetime.utcnow()}}
+            )
+        
+        # ✅ ক্যাশ কন্ট্রোল হেডার যোগ করুন
         response = jsonify({"is_member": is_member})
         response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
         return response
+        
     except Exception as e:
-        return jsonify({"is_member": False})
+        print(f"Check membership error: {e}")
+        # ✅ এরর হলেও ডাটাবেসের মান দেখান
+        return jsonify({"is_member": user.get("is_joined", False)})
+
+
 
 @dashboard_bp.route('/api/dashboard/stats')
 @login_required
