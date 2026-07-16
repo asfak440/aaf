@@ -466,7 +466,7 @@ async function deleteTask(taskId) {
     // ===== মাইলস্টোন অ্যাকশন =====
     else if (action === 'delete-milestone') {
         if (!confirm('মাইলস্টোন ডিলিট করবেন?')) return;
-        fetch(`${ADMIN_API}/admin/milestone/delete', {
+        fetch(`${ADMIN_API}/admin/milestone/delete`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
