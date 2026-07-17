@@ -351,12 +351,15 @@
 
 
 
-        <!-- ৬. কমিউনিটি জয়েন কার্ড (আপডেটেড) -->
+        <!-- ৬. কমিউনিটি জয়েন কার্ড (লোগো সহ) -->
 <div class="premium-card join-card" id="join-container">
     <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-        <div style="width: 40px; height: 40px; background: rgba(0,242,254,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-            <i class="fas fa-robot" style="font-size: 20px; color: var(--primary);"></i>
+        
+        <!-- ✅ লোগো এখানে বসবে (আইকনের জায়গায়) -->
+        <div style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; border: 2px solid var(--primary); display: flex; align-items: center; justify-content: center; background: rgba(0,242,254,0.1); flex-shrink: 0;">
+            <img src="/static/logo.png" alt="Bot Logo" style="width: 100%; height: 100%; object-fit: cover;">
         </div>
+        
         <div>
             <h4 style="font-size: 12px; margin: 0; color: var(--primary);" id="bot-name">🤖 AAF Verification Bot</h4>
             <small style="color: var(--text-muted); font-size: 9px;" id="last-check-time">শেষ চেক: এখনই</small>
@@ -414,14 +417,15 @@ const CHANNEL_CONFIG = {
     MANUAL_CHECK_COOLDOWN: 300000, // 5 মিনিট
 };
 
-// স্টেট
+
+// ✅ পরিবর্তন করুন:
 let membershipState = {
     isMember: false,
     lastCheck: null,
     isChecking: false,
     manualCheckAllowed: true,
+    checkTimer: null,  // ← যোগ করুন
 };
-
 // ==================== UI আপডেট ফাংশন ====================
 function updateChannelUI(isMember, isChecking = false) {
     const statusBadge = document.getElementById('status-badge');
@@ -530,14 +534,12 @@ async function initMembershipSystem() {
     if (botName) {
         botName.innerHTML = CHANNEL_CONFIG.BOT_NAME;
     }
-
     await checkChannelMembership(true);
     updateChannelUI(membershipState.isMember);
-
+    startAutoCheck();  // ✅ যোগ করুন
     console.log('🤖 চ্যানেল সিস্টেম initialized');
     console.log('📊 বর্তমান স্ট্যাটাস:', membershipState.isMember ? '✅ মেম্বার' : '❌ মেম্বার নন');
-        }
-
+}
 // ================= SAFE INTERVAL =================
 function smartInterval(fn, time){
   let t;
@@ -841,8 +843,8 @@ function closePopup() {
 
     setText('my-refs', (user.refer_count || 0) + " REFERRED");
 
-    // ==================== চ্যানেল স্ট্যাটাস আপডেট (আপডেটেড) ====================
-    const joined = user.is_joined;
+    // ==================== চ্যানেল স্ট্যাটাস আপডেট (আপডেটেড) ===================
+    const joined = membershipState.isMember;  // ← membershipState থেকে নিন
     const dot = document.getElementById('status-dot');
     const joinBtn = document.getElementById('join-btn');
     const joinStatus = document.getElementById('join-status');
@@ -969,8 +971,14 @@ function closePopup() {
         // UI আপডেট
         updateChannelUI(membershipState.isMember);
 
+        // ✅ ডট স্ট্যাটাস আপডেট করুন
+        const dot = document.getElementById('status-dot');
+        if (dot) {
+            dot.className = membershipState.isMember ? 'dot-online' : 'dot-offline';
+        }
+
         if (membershipState.isMember) {
-            await initDashboard();
+            // ❌ await initDashboard();  // ← এই লাইনটি সরান
             triggerPopup('✅ চ্যানেল ভেরিফাইড! সব ফিচার খোলা হয়েছে! 🎉');
         } else {
             triggerPopup('❌ আপনি এখনও চ্যানেলে যুক্ত নন। দয়া করে জয়েন করুন!');
@@ -1079,6 +1087,20 @@ function closePopup() {
         if (usersElem) usersElem.innerText = '0';
     }
     }
+
+    // ==================== অটো চেক টাইমার ====================
+function startAutoCheck() {
+    if (membershipState.checkTimer) {
+        clearInterval(membershipState.checkTimer);
+        membershipState.checkTimer = null;
+    }
+    const intervalMs = 50 * 60 * 1000;
+    membershipState.checkTimer = setInterval(() => {
+        console.log('⏰ অটো চেক: ৫০ মিনিট হয়ে গেছে');
+        checkChannelMembership(false);
+    }, intervalMs);
+    console.log('✅ অটো চেক শুরু: প্রতি ৫০ মিনিট পর');
+}
 </script>
 </body>
 </html>
