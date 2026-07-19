@@ -187,9 +187,9 @@ def check_membership():
     
     admin = get_admin_config()
     
-    # ✅ ড্যাশবোর্ড বটের টোকেন ব্যবহার করুন
-    bot_token = admin.get("dashboard_bot_token") or admin.get("bot_token")
-    channel_url = admin.get("official_channel") or admin.get("channel_url", "")
+    # ✅ এই লাইনটি পরিবর্তন করুন
+    bot_token = admin.get("bots", {}).get("dashboard_token") or admin.get("bot_token")
+    channel_url = admin.get("channel_url", "")
     
     if not bot_token or not channel_url:
         return jsonify({"is_member": False, "error": "Bot not configured"})
