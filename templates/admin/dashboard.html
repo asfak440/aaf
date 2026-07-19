@@ -329,9 +329,8 @@
             const popupDiv = document.getElementById('popup-display');
             if (popupDiv) popupDiv.style.display = 'none';
         }
-
-
-// ========== 2. সব বট সেভ ফাংশন ==========
+        
+        // ========== 2. সব বট সেভ ফাংশন ==========
         async function saveAllBots() {
     const btn = document.querySelector('[data-action="save-all-bots"]');
     const originalText = btn?.textContent || '💾 সব বট সেভ করুন';
@@ -342,17 +341,14 @@
     }
 
     const botData = {
-        // ইউজারনেম
         dashboard_username: document.getElementById('dash-bot-username')?.value.trim() || '',
+        dashboard_token: document.getElementById('dash-bot-token')?.value.trim() || '',     // ✅ যোগ করুন
         task_username: document.getElementById('task-bot-username')?.value.trim() || '',
+        task_token: document.getElementById('task-bot-token')?.value.trim() || '',         // ✅ যোগ করুন
         withdraw_username: document.getElementById('withdraw-bot-username')?.value.trim() || '',
+        withdraw_token: document.getElementById('withdraw-bot-token')?.value.trim() || '', // ✅ যোগ করুন
         admin_username: document.getElementById('admin-bot-username')?.value.trim() || '',
-
-        // টোকেন
-      dashboard_token: document.getElementById('dash-bot-token')?.value.trim() || '',
-        task_token: document.getElementById('task-bot-token')?.value.trim() || '',
-        withdraw_token: document.getElementById('withdraw-bot-token')?.value.trim() || '',
-        admin_token: document.getElementById('admin-bot-token')?.value.trim() || ''
+        admin_token: document.getElementById('admin-bot-token')?.value.trim() || ''        // ✅ যোগ করুন
     };
 
     try {
@@ -367,7 +363,7 @@
 
         if (data.success) {
             alert('✅ সব বট সেভ হয়েছে!');
-            loadBotConfigs(); // রিলোড
+            loadBotConfigs();
         } else {
             alert('❌ ' + (data.message || 'সেভ ব্যর্থ'));
         }
@@ -380,9 +376,10 @@
             btn.disabled = false;
         }
     }
-      }
-// ========== 3. বট কনফিগ লোড ==========
-      async function loadBotConfigs() {
+        }
+        
+        // ========== 3. বট কনফিগ লোড ==========
+        async function loadBotConfigs() {
     try {
         const res = await fetch(`${ADMIN_API}/admin/bots/all`, {
             credentials: 'include'
@@ -396,8 +393,11 @@
             document.getElementById('withdraw-bot-username').value = data.withdraw_username || '';
             document.getElementById('admin-bot-username').value = data.admin_username || '';
 
-            // টোকেন বসান (সিকিউরিটির জন্য দেখানো হবে না)
-            // document.getElementById('dash-bot-token').value = data.dashboard_token || '';
+            // ✅ টোকেন বসান (এখন দেখাবে!)
+            document.getElementById('dash-bot-token').value = data.dashboard_token || '';
+            document.getElementById('task-bot-token').value = data.task_token || '';
+            document.getElementById('withdraw-bot-token').value = data.withdraw_token || '';
+            document.getElementById('admin-bot-token').value = data.admin_token || '';
 
             // স্ট্যাটাস আপডেট
             updateBotStatus('dash-bot-status', data.dashboard_active);
@@ -423,8 +423,7 @@
     } catch(e) {
         console.error('❌ বট কনফিগ লোড ব্যর্থ:', e);
     }
-      }
-      
+        }
 // ========== 4. স্ট্যাটাস আপডেট ফাংশন =======
       function updateBotStatus(elementId, active) {
     const el = document.getElementById(elementId);
