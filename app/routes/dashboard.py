@@ -177,7 +177,6 @@ def verify_join():
 @dashboard_bp.route('/api/check_membership', methods=["GET"])
 @login_required
 def check_membership():
-    """শুধু রিয়েল-টাইম চেক করবে, ডাটাবেসে কিছু সেভ করবে না"""
     uid = session.get("uid")
     if not uid:
         return jsonify({"is_member": False})
@@ -187,17 +186,17 @@ def check_membership():
         return jsonify({"is_member": False})
     
     admin = get_admin_config()
-    bot_token = admin.get("bot_token")
-    channel_url = admin.get("channel_url", "")
     
-    # যদি bot_token না থাকে
+    # ✅ ড্যাশবোর্ড বটের টোকেন ব্যবহার করুন
+    bot_token = admin.get("dashboard_bot_token") or admin.get("bot_token")
+    channel_url = admin.get("official_channel") or admin.get("channel_url", "")
+    
     if not bot_token or not channel_url:
         return jsonify({"is_member": False, "error": "Bot not configured"})
     
     try:
         user_tg_id = int(user.get("telegram_id"))
         
-        # চ্যানেল ইউজারনেম এক্সট্র্যাক্ট
         if "t.me/" in channel_url:
             channel_username = "@" + channel_url.split("t.me/")[-1].split("/")[0]
         elif channel_url.startswith("@"):
@@ -205,7 +204,6 @@ def check_membership():
         else:
             channel_username = "@" + channel_url
         
-        # টেলিগ্রাম API কল (রিয়েল-টাইম)
         import requests
         url = f"https://api.telegram.org/bot{bot_token}/getChatMember?chat_id={channel_username}&user_id={user_tg_id}"
         resp = requests.get(url, headers={"Cache-Control": "no-cache"}, timeout=10)
@@ -217,13 +215,9 @@ def check_membership():
         else:
             is_member = False
         
-        # ❌ ডাটাবেস আপডেট করছি না!
-        # শুধু রেজাল্ট রিটার্ন করছি
-        
         response = jsonify({
             "is_member": is_member,
-            "status": status if data.get("ok") else "unknown",
-            "channel": channel_username
+            "status": status if data.get("ok") else "unknown"
         })
         response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
         return response
@@ -231,7 +225,7 @@ def check_membership():
     except Exception as e:
         print(f"Check membership error: {e}")
         return jsonify({"is_member": False, "error": str(e)})
-
+        
 @dashboard_bp.route('/api/dashboard/stats')
 @login_required
 def dashboard_stats():
