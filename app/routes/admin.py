@@ -749,30 +749,28 @@ def save_all_bots():
     
     return jsonify({"success": True, "message": "বট সেভ হয়েছে"})
 
-@admin_bp.route('/api/admin/bots/save-all', methods=['POST'])
+
+@admin_bp.route('/api/admin/bots/all', methods=['GET'])
 @login_required
-def save_all_bots():
+def get_all_bots():
     try:
-        data = request.json
         admin = get_admin_config()
-        
-        bots = {
-            "dashboard_username": data.get('dashboard_username', ''),
-            "dashboard_token": data.get('dashboard_token', ''),
-            "task_username": data.get('task_username', ''),
-            "task_token": data.get('task_token', ''),
-            "withdraw_username": data.get('withdraw_username', ''),
-            "withdraw_token": data.get('withdraw_token', ''),
-            "admin_username": data.get('admin_username', ''),
-            "admin_token": data.get('admin_token', '')
-        }
-        
-        admin['bots'] = bots
-        save_admin_config(admin)
+        bots = admin.get("bots", {})
         
         return jsonify({
             'success': True,
-            'message': 'সব বট সেভ হয়েছে'
+            'dashboard_username': bots.get('dashboard_username', ''),
+            'dashboard_token': bots.get('dashboard_token', ''),
+            'task_username': bots.get('task_username', ''),
+            'task_token': bots.get('task_token', ''),
+            'withdraw_username': bots.get('withdraw_username', ''),
+            'withdraw_token': bots.get('withdraw_token', ''),
+            'admin_username': bots.get('admin_username', ''),
+            'admin_token': bots.get('admin_token', ''),
+            'dashboard_active': bool(bots.get('dashboard_token')),
+            'task_active': bool(bots.get('task_token')),
+            'withdraw_active': bool(bots.get('withdraw_token')),
+            'admin_active': bool(bots.get('admin_token'))
         })
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
