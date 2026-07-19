@@ -83,10 +83,24 @@ def admin_config():
         "server_trading": admin.get("server_trading", 0),
         "banner_ad_code": admin.get("banner_ad_code", ""),
         "referral_bonus": admin.get("referral_bonus", 0),
+        
+        # ✅ পুরোনো (ব্যাকওয়ার্ড কম্প্যাটিবিলিটি)
         "bot_token": admin.get("bot_token", ""),
         "channel_url": admin.get("channel_url", ""),
         "channel_id": admin.get("channel_id", ""),
         "extra_users": admin.get("extra_users", 0),
+        
+        # ✅ নতুন: ৪টি আলাদা বট
+        "dashboard_bot_token": admin.get("dashboard_bot_token", ""),
+        "task_bot_token": admin.get("task_bot_token", ""),
+        "withdraw_bot_token": admin.get("withdraw_bot_token", ""),
+        "admin_bot_token": admin.get("admin_bot_token", ""),
+        
+        # ✅ নতুন: চ্যানেল
+        "official_channel": admin.get("official_channel", ""),
+        "task_channel": admin.get("task_channel", ""),
+        "payment_channel": admin.get("payment_channel", ""),
+        
         "bonus_target": admin.get("bonus_target", 5),
         "task_rules": admin.get("task_rules", {"device_check": True, "ip_check": False, "account_check": True}),
         "ip_limit_per_hour": admin.get("ip_limit_per_hour", 5),
@@ -106,9 +120,8 @@ def admin_update_settings():
     data = request.json
 
     update_data = {
+        # পুরোনো ফিল্ড
         "channel_url": data.get("channel_url", ""),
-        "min_trades": int(data.get("min_trades", 5)),
-        "ip_limit": data.get("ip_limit", "off"),
         "bot_token": data.get("bot_token", ""),
         "channel_id": data.get("channel_id", ""),
         "server_income": float(data.get("server_income", 0)),
@@ -117,6 +130,18 @@ def admin_update_settings():
         "banner_ad_code": data.get("banner_ad_code", ""),
         "extra_users": int(data.get("extra_users", 0)),
         "referral_bonus": float(data.get("referral_bonus", 0)),
+        
+        # ✅ নতুন: ৪টি আলাদা বট
+        "dashboard_bot_token": data.get("dashboard_bot_token", ""),
+        "task_bot_token": data.get("task_bot_token", ""),
+        "withdraw_bot_token": data.get("withdraw_bot_token", ""),
+        "admin_bot_token": data.get("admin_bot_token", ""),
+        
+        # ✅ নতুন: চ্যানেল
+        "official_channel": data.get("official_channel", ""),
+        "task_channel": data.get("task_channel", ""),
+        "payment_channel": data.get("payment_channel", ""),
+        
         "task_banner_ad": data.get("task_banner_ad", ""),
         "task_popup_ad": data.get("task_popup_ad", ""),
         "task_rules": data.get("task_rules", {"device_check": True, "ip_check": False, "account_check": True}),
