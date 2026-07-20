@@ -10,3 +10,5 @@ requests
 nest-asyncio
 firebase-admin
 pyTelegramBotAPI
+Flask-PyMongo
+Werkzeug
