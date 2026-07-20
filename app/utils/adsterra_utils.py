@@ -6,10 +6,7 @@ from datetime import datetime, timedelta
 from app import db_mongo
 
 def verify_adsterra_click(click_id, telegram_id):
-    """
-    Adsterra ক্লিক ভেরিফাই করুন
-    """
-    # ১. ডাটাবেজে ক্লিক চেক করুন
+    """Adsterra ক্লিক ভেরিফাই করুন"""
     click_record = db_mongo.adsterra_clicks.find_one({
         "click_id": click_id,
         "telegram_id": telegram_id
@@ -18,15 +15,12 @@ def verify_adsterra_click(click_id, telegram_id):
     if not click_record:
         return False, "ক্লিক রেকর্ড পাওয়া যায়নি"
     
-    # ২. টাইম চেক (৫ মিনিটের মধ্যে)
     if datetime.utcnow() - click_record["created_at"] > timedelta(minutes=5):
         return False, "ক্লিকের মেয়াদ শেষ হয়েছে"
     
-    # ৩. ইতিমধ্যে ব্যবহার হয়েছে কিনা চেক
     if click_record.get("used", False):
         return False, "এই ক্লিক ইতিমধ্যে ব্যবহার করা হয়েছে"
     
-    # ৪. ভেরিফাইড মার্ক করুন
     db_mongo.adsterra_clicks.update_one(
         {"click_id": click_id},
         {"$set": {"used": True, "verified_at": datetime.utcnow()}}
@@ -36,34 +30,20 @@ def verify_adsterra_click(click_id, telegram_id):
 
 
 def send_conversion_to_adsterra(click_id, amount=0):
-    """
-    Adsterra-তে কনভার্সন রিপোর্ট করুন (Postback)
-    """
+    """Adsterra-তে কনভার্সন রিপোর্ট করুন"""
     try:
-        # আপনার Adsterra Postback URL (আপনার নিজেরটা বসান)
         postback_url = f"https://www.pbterra.com/name/your_username/at?subid_short={click_id}"
-        
         if amount > 0:
             postback_url += f"&amount={amount}"
         
         response = requests.get(postback_url, timeout=5)
-        
-        if response.status_code == 200:
-            print(f"✅ Conversion sent for click: {click_id}")
-            return True
-        else:
-            print(f"❌ Conversion failed for click: {click_id}")
-            return False
-            
-    except Exception as e:
-        print(f"Error sending conversion: {e}")
+        return response.status_code == 200
+    except:
         return False
 
 
 def track_adsterra_click(click_id, telegram_id, task_id, ip, user_agent):
-    """
-    Adsterra ক্লিক ট্র্যাক করুন
-    """
+    """Adsterra ক্লিক ট্র্যাক করুন"""
     db_mongo.adsterra_clicks.insert_one({
         "click_id": click_id,
         "telegram_id": telegram_id,
@@ -77,8 +57,6 @@ def track_adsterra_click(click_id, telegram_id, task_id, ip, user_agent):
 
 
 def generate_click_id(telegram_id, task_id):
-    """
-    ইউনিক ক্লিক আইডি তৈরি করুন
-    """
+    """ইউনিক ক্লিক আইডি তৈরি করুন"""
     raw = f"{telegram_id}_{task_id}_{datetime.utcnow().timestamp()}"
     return hashlib.md5(raw.encode()).hexdigest()
