@@ -59,6 +59,46 @@ def auto_disable_expired_tasks():
         db_mongo["task_timers"].delete_one({"_id": timer["_id"]})
 
 
+# ================= USER ME API (Tasks) =================
+@tasks_bp.route('/api/user/me')
+def tasks_user_me():
+    uid = session.get("uid")
+    if not uid:
+        return jsonify({"status": "error", "message": "session_expired"})
+    
+    user = users_col.find_one({"_id": ObjectId(uid)})
+    if not user:
+        session.clear()
+        return jsonify({"status": "error", "message": "user_not_found"})
+    
+    admin = get_admin_config()
+    
+    safe_user = {
+        "_id": str(user["_id"]),
+        "telegram_id": user.get("telegram_id"),
+        "username": user.get("username"),
+        "first_name": user.get("first_name", ""),
+        "last_name": user.get("last_name", ""),
+        "cash": float(user.get("cash", 0)),
+        "aaf": float(user.get("aaf", 0)),
+        "refer_count": user.get("refer_count", 0),
+        "tasks_done": user.get("tasks_done", 0),
+        "is_joined": user.get("is_joined", False),
+        "phone": user.get("phone", "")
+    }
+    
+    safe_admin = {
+        "live_price": admin.get("live_price", 1.0),
+        "trading_fee": admin.get("trading_fee", 0.5),
+        "banner_ad_code": admin.get("banner_ad_code", ""),
+        "trading_ad_text": admin.get("trading_ad_text", ""),
+        "referral_bonus": admin.get("referral_bonus", 0),
+        "wallet": admin.get("wallet", {"nagad": "", "bkash": ""})
+    }
+    
+    return jsonify({"status": "success", "user": safe_user, "admin": safe_admin})
+
+
 @tasks_bp.route('/api/user/claimed_tasks')
 @login_required
 def get_claimed_tasks():
