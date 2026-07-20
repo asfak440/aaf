@@ -1,0 +1,4 @@
+# .env
+
+ADSTERRA_POSTBACK_URL=https://www.pbterra.com/name/asfak/at
+ADSTERRA_SECRET=264bdfff4fbffdacbc24d69b9dad3a7b
