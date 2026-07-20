@@ -333,32 +333,25 @@ function renderTaskUI(user, admin, tasks, milestones) {
     if (admin && admin.banner_ad_code) injectSafeAdHTML(admin.banner_ad_code);
 }
 
-// ========== renderTasks ==========
+// ========== renderTasks ফাংশনটি এইভাবে আপডেট করুন ==========
 async function renderTasks(tasks) {
     const TG_ID = getTG();
     const list = document.getElementById('main-task-list');
     if (!list) return;
 
-    // ১. ইউজারের আগে ক্লেইম করা টাস্কগুলোর আইডি নিয়ে আসুন
+    // ১. ক্লেইমড টাস্ক আইডি
     let claimedIds = [];
     try {
         const claimedRes = await fetch(`${API}/api/user/claimed_tasks`, { credentials: 'include' });
         const claimedData = await claimedRes.json();
         claimedIds = claimedData.claimed_ids || [];
-        console.log("✅ Claimed IDs:", claimedIds);  // 👈 ডিবাগ
     } catch(e) { console.log("Error fetching claimed tasks", e); }
 
-    // ২. টাস্কের ID চেক করুন
-    console.log("📋 All tasks:", tasks);  // 👈 দেখুন tasks-এ id আছে কিনা
-
-    // ৩. টাস্ক ফিল্টার করুন
+    // ২. টাস্ক ফিল্টার
     const availableTasks = tasks.filter(t => {
         const isClaimed = claimedIds.includes(t.id);
-        console.log(`🔍 Task: ${t.title}, ID: ${t.id}, Claimed: ${isClaimed}`);  // 👈 ডিবাগ
         return !isClaimed;
     });
-
-    console.log("📋 Available tasks:", availableTasks);  // 👈 ডিবাগ
 
     list.innerHTML = "";
     if (availableTasks.length === 0) {
@@ -366,59 +359,222 @@ async function renderTasks(tasks) {
         return;
     }
 
+    // ৩. টাস্ক রেন্ডার
     availableTasks.forEach(t => {
         const reward = t.currency === 'aaf' ? `AAF ${t.reward}` : `৳${t.reward}`;
+        
+        // 🆕 টাস্ক টাইপ অনুযায়ী আইকন ও বাটন
+        let iconHtml = '';
+        let buttonHtml = '';
+        let extraInfo = '';
+        
+        if (t.type === 'telegram_channel') {
+            iconHtml = '<i class="fab fa-telegram"></i>';
+            buttonHtml = `<button class="btn-claim" id="btn-${t.id}" onclick="startChannelTask('${t.id}','${t.link}',${t.timer || 30})">🚀 JOIN & EARN</button>`;
+        } 
+        else if (t.type === 'post_view') {
+            iconHtml = '<i class="fas fa-eye" style="color:#8b5cf6;"></i>';
+            extraInfo = `<small style="color:#8b5cf6;">⏱️ ${t.view_duration || 30} সেকেন্ড</small>`;
+            buttonHtml = `<button class="btn-claim" id="post-btn-${t.id}" onclick="startPostViewTask('${t.id}','${t.link}',${t.view_duration || 30})">👁️ ভিউ করুন</button>`;
+        } 
+        else if (t.type === 'smart_click') {
+            iconHtml = '<i class="fas fa-ad" style="color:#ff6b6b;"></i>';
+            extraInfo = `<small style="color:#ff6b6b;">📊 Adsterra</small>`;
+            buttonHtml = `<button class="btn-claim" id="smart-btn-${t.id}" onclick="startSmartClickTask('${t.id}','${t.adsterra_url || t.link}')">🌐 স্মার্ট ক্লিক</button>`;
+        }
+
         list.innerHTML += `
             <div class="task-card" style="animation: fadeInUp 0.3s ease;">
                 <div class="task-top">
-                    <div class="task-icon"><i class="fas fa-tasks"></i></div>
+                    <div class="task-icon">${iconHtml}</div>
                     <div class="task-info">
                         <h4>${escapeHtml(t.title)}</h4>
                         <p>${t.description || 'লিংকে ক্লিক করে কাজ শেষ করুন'}</p>
+                        ${extraInfo}
                     </div>
                     <div class="reward-tag">${reward}</div>
                 </div>
-                <button class="btn-claim" id="btn-${t.id}" onclick="startTask('${t.id}','${t.link}',${t.timer},'${t.type}')">
-                    START EARNING
-                </button>
+                ${buttonHtml}
             </div>
         `;
     });
-    }
+}
 
-
-// ===== ২. startTask ফাংশন =====
-function startTask(id, url, sec, type) {
+    // ========== POST VIEW TASK ==========
+function startPostViewTask(taskId, link, duration) {
     if (!USER_JOINED && !confirm("Join না করলে Bonus পাবেন না. চালাবেন?")) return;
 
-    isTaskRunning = true;  // 👈 এই লাইনটি যোগ করুন (টাস্ক শুরু হলে)
-
-    window.open(url, '_blank');
-    const btn = document.getElementById(`btn-${id}`);
-    btn.disabled = true;
-    let remaining = sec;
-    const timerSpan = document.createElement('div');
-    timerSpan.style.cssText = 'font-size:10px; color:var(--gold); margin-top:5px; animation: fadeIn 0.2s;';
-    btn.parentNode.appendChild(timerSpan);
-    const interval = setInterval(() => {
-        if (remaining <= 0) {
-            clearInterval(interval);
-            timerSpan.remove();
-            btn.innerText = "✅ VERIFY";
-            btn.disabled = false;
-            btn.style.animation = 'pulse 0.3s';
-            btn.onclick = () => {
-                verifyTask(id, type);
-                isTaskRunning = false;  // 👈 এই লাইনটি যোগ করুন (VERIFY করলে)
-            };
+    // টাইমার শুরু করুন
+    fetch('/api/user/tasks/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ task_id: taskId })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            // নতুন উইন্ডোতে পোস্ট ওপেন করুন
+            window.open(link, '_blank');
+            showTimer(taskId, data.expires_at, 'verifyPostViewTask', taskId, duration);
         } else {
-            const mins = Math.floor(remaining / 60);
-            const secs = remaining % 60;
-            timerSpan.innerText = `⏳ অপেক্ষা করুন: ${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-            remaining--;
+            showAnimatedNotification(data.message || '❌ টাইমার শুরু করতে ব্যর্থ', 'error');
+        }
+    })
+    .catch(e => {
+        showAnimatedNotification('❌ সার্ভার ত্রুটি', 'error');
+        console.error(e);
+    });
+}
+
+async function verifyPostViewTask(taskId, duration) {
+    try {
+        const res = await fetch('/api/user/tasks/verify_post_view', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ 
+                task_id: taskId, 
+                view_duration: duration,
+                device_id: DEVICE_ID 
+            })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            showAnimatedNotification(data.message || '✅ টাস্ক সম্পন্ন!', 'success');
+            await initTaskPage();
+        } else {
+            showAnimatedNotification(`❌ ${data.message}`, 'error');
+        }
+    } catch(e) {
+        showAnimatedNotification('❌ সার্ভার ত্রুটি', 'error');
+        console.error(e);
+    }
+        }
+
+    // ========== SMART CLICK TASK ==========
+function startSmartClickTask(taskId, adUrl) {
+    if (!USER_JOINED && !confirm("Join না করলে Bonus পাবেন না. চালাবেন?")) return;
+
+    const telegramId = localStorage.getItem('telegram_id');
+    const clickId = btoa(`${telegramId}_${taskId}_${Date.now()}`); // Base64 encode
+    
+    // ১. ক্লিক ট্র্যাক করুন
+    fetch('/adsterra/click_track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ 
+            click_id: clickId, 
+            telegram_id: telegramId,
+            task_id: taskId 
+        })
+    })
+    .then(() => {
+        // ২. টাইমার শুরু করুন
+        fetch('/api/user/tasks/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ task_id: taskId })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                // ৩. Adsterra লিংক ওপেন করুন
+                window.open(`${adUrl}?subid=${clickId}`, '_blank');
+                showTimer(taskId, data.expires_at, 'verifySmartClickTask', taskId, clickId);
+            } else {
+                showAnimatedNotification(data.message || '❌ টাইমার শুরু করতে ব্যর্থ', 'error');
+            }
+        });
+    })
+    .catch(e => {
+        showAnimatedNotification('❌ ক্লিক ট্র্যাক করতে ব্যর্থ', 'error');
+        console.error(e);
+    });
+}
+
+async function verifySmartClickTask(taskId, clickId) {
+    try {
+        const res = await fetch('/api/user/tasks/verify_smart_click', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ 
+                task_id: taskId, 
+                click_id: clickId,
+                device_id: DEVICE_ID 
+            })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            showAnimatedNotification(data.message || '✅ স্মার্ট ক্লিক সম্পন্ন!', 'success');
+            await initTaskPage();
+        } else {
+            showAnimatedNotification(`❌ ${data.message}`, 'error');
+        }
+    } catch(e) {
+        showAnimatedNotification('❌ সার্ভার ত্রুটি', 'error');
+        console.error(e);
+    }
+        }
+
+
+    // ========== TIMER HELPER ==========
+function showTimer(taskId, expiresAt, verifyFn, ...args) {
+    // সব বাটন খুঁজুন
+    const btn = document.querySelector(`#btn-${taskId}`) || 
+                document.querySelector(`#post-btn-${taskId}`) || 
+                document.querySelector(`#smart-btn-${taskId}`);
+    
+    if (!btn) return;
+    
+    btn.disabled = true;
+    const originalText = btn.innerText;
+    
+    const timerDiv = document.createElement('div');
+    timerDiv.style.cssText = 'font-size:12px; color:#ffaa00; margin:5px 0; text-align:center;';
+    btn.parentNode.appendChild(timerDiv);
+    
+    const interval = setInterval(() => {
+        const diff = new Date(expiresAt) - new Date();
+        if (diff <= 0) {
+            clearInterval(interval);
+            timerDiv.innerHTML = '⏰ সময় শেষ!';
+            btn.disabled = false;
+            btn.innerText = '⛔ বন্ধ';
+            btn.style.background = '#ff0055';
+            btn.style.color = '#fff';
+            return;
+        }
+        const secs = Math.floor(diff / 1000);
+        timerDiv.innerHTML = `⏱️ বাকি: ${secs}s`;
+        
+        if (secs <= 5) {
+            timerDiv.style.color = '#ff0055';
+            timerDiv.style.fontWeight = 'bold';
+            if (secs === 0) {
+                timerDiv.innerHTML = '✅ VERIFY করুন!';
+                btn.disabled = false;
+                btn.innerText = '✅ VERIFY';
+                btn.style.background = 'linear-gradient(135deg, #00ff88, #00cc66)';
+                btn.style.color = '#000';
+                btn.onclick = () => {
+                    const fn = window[verifyFn];
+                    if (fn) fn(...args);
+                };
+                clearInterval(interval);
+            }
         }
     }, 1000);
-    }
+                    }
+
+    
+
+// ===== ২. startTask ফাংশন =====
 
 async function verifyTask(taskId, type) {
     const TG_ID = getTG();
