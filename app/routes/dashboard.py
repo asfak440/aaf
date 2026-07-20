@@ -58,17 +58,29 @@ def user_me():
     final_trading = auto_trading + manual_trading
     final_users = real_users + manual_users
     
+    # 🔥 চেক করুন ইউজার চ্যানেলে জয়েন করেছে কিনা (Telegram চেক)
+    is_joined = False
+    try:
+        # ডিফল্ট চ্যানেল চেক (যদি কনফিগারে থাকে)
+        default_channel = admin.get("default_channel", "")
+        if default_channel:
+            from app.services.telegram_service import verify_user_task_smart
+            is_joined = verify_user_task_smart(user.get("telegram_id"), default_channel)
+    except Exception as e:
+        print(f"Channel check error: {e}")
+        is_joined = user.get("is_joined", False)  # ডাটাবেস থেকে নিন
+    
     safe_user = {
         "_id": str(user["_id"]),
         "telegram_id": user.get("telegram_id"),
         "username": user.get("username"),
         "first_name": user.get("first_name", ""),
         "last_name": user.get("last_name", ""),
-        "cash": user.get("cash", 0),
-        "aaf": user.get("aaf", 0),
+        "cash": float(user.get("cash", 0)),
+        "aaf": float(user.get("aaf", 0)),
         "refer_count": user.get("refer_count", 0),
         "tasks_done": user.get("tasks_done", 0),
-        # ❌ is_joined সরিয়ে দেওয়া হয়েছে (ডাটাবেসে জমা হবে না)
+        "is_joined": is_joined,  # ✅ যোগ করুন
         "phone": user.get("phone", "")
     }
     
