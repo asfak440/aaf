@@ -114,6 +114,44 @@ def get_claimed_tasks():
     claimed_ids = [claim["task_id"] for claim in claims]
     return jsonify({"claimed_ids": claimed_ids})
 
+# ================= USER MILESTONES =================
+@tasks_bp.route('/api/user/milestones', methods=['GET'])
+@login_required
+def get_user_milestones():
+    uid = session.get("uid")
+    user = users_col.find_one({"_id": ObjectId(uid)})
+    if not user:
+        return jsonify({"milestones": []})
+    
+    # ইউজারের টাস্ক কাউন্ট
+    task_count = task_claims_col.count_documents({
+        "telegram_id": user.get("telegram_id"),
+        "status": "approved"
+    })
+    
+    milestones = list(db_mongo["milestones"].find({"active": True}))
+    
+    result = []
+    for m in milestones:
+        progress = min(task_count, m.get("target", 0))
+        already_claimed = db_mongo["user_milestone_claims"].find_one({
+            "telegram_id": user.get("telegram_id"),
+            "milestone_id": str(m["_id"])
+        })
+        
+        result.append({
+            "id": str(m["_id"]),
+            "target": m.get("target", 0),
+            "reward_amount": m.get("reward_amount", 0),
+            "reward_type": m.get("reward_type", "bdt"),
+            "type": m.get("type", "task"),
+            "progress": progress,
+            "achieved": progress >= m.get("target", 0),
+            "already_claimed": bool(already_claimed)
+        })
+    
+    return jsonify({"milestones": result})
+
 
 @tasks_bp.route('/api/user/due_status')
 @login_required
