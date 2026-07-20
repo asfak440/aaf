@@ -314,26 +314,6 @@ async function initTaskPage() {
     }
 }
 
-function renderTaskUI(user, admin, tasks, milestones) {
-    console.log("🎨 Rendering UI with user:", user);
-    if (user) {
-        updateBalance(user.cash || 0, user.aaf || 0);
-        USER_JOINED = user.is_joined === true;
-    } else {
-        updateBalance(0, 0);
-        USER_JOINED = false;
-    }
-
-    const joinWarning = document.getElementById('join-warning');
-    if (joinWarning) joinWarning.style.display = USER_JOINED ? 'none' : 'flex';
-
-    if (milestones && milestones.length > 0) renderMilestones(milestones);
-
-    // টাস্ক কন্টেইনার (শুধু মাইলস্টোনের পর দেখাবে, টাস্ক আলাদা লোড হয়)
-    if (admin && admin.banner_ad_code) injectSafeAdHTML(admin.banner_ad_code);
-}
-
-
 
     // ========== POST VIEW TASK ==========
 function startPostViewTask(taskId, link, duration) {
@@ -706,6 +686,169 @@ function setButtonByCurrentPage() {
         text.innerHTML = 'Task';
     }
 }
+
+    // =============================================
+// 1. RENDER TASK UI - renderTaskUI()
+// =============================================
+function renderTaskUI(user, admin, tasks, milestones) {
+    console.log("🎨 Rendering UI with user:", user);
+    if (user) {
+        updateBalance(user.cash || 0, user.aaf || 0);
+        USER_JOINED = user.is_joined === true;
+    } else {
+        updateBalance(0, 0);
+        USER_JOINED = false;
+    }
+
+    const joinWarning = document.getElementById('join-warning');
+    if (joinWarning) joinWarning.style.display = USER_JOINED ? 'none' : 'flex';
+
+    if (milestones && milestones.length > 0) renderMilestones(milestones);
+
+    if (admin && admin.banner_ad_code) injectSafeAdHTML(admin.banner_ad_code);
+}
+
+
+// =============================================
+// 2. RENDER TASKS - renderTasks()
+// =============================================
+async function renderTasks(tasks) {
+    const list = document.getElementById('main-task-list');
+    if (!list) return;
+
+    // ১. ক্লেইমড টাস্ক আইডি
+    let claimedIds = [];
+    try {
+        const claimedRes = await fetch(`${API}/api/user/claimed_tasks`, { credentials: 'include' });
+        const claimedData = await claimedRes.json();
+        claimedIds = claimedData.claimed_ids || [];
+    } catch(e) { console.log("Error fetching claimed tasks", e); }
+
+    // ২. টাস্ক ফিল্টার
+    const availableTasks = tasks.filter(t => {
+        const isClaimed = claimedIds.includes(t.id);
+        return !isClaimed;
+    });
+
+    list.innerHTML = "";
+    if (availableTasks.length === 0) {
+        list.innerHTML = '<div style="text-align:center; padding:40px; color: var(--active-green);"><i class="fas fa-check-circle"></i> অভিনন্দন! আপনি সব টাস্ক সম্পন্ন করেছেন। নতুন টাস্ক আসছে শীঘ্রই।</div>';
+        return;
+    }
+
+    // ৩. টাস্ক রেন্ডার
+    availableTasks.forEach(t => {
+        const reward = t.currency === 'aaf' ? `AAF ${t.reward}` : `৳${t.reward}`;
+        
+        let iconHtml = '';
+        let buttonHtml = '';
+        let extraInfo = '';
+        
+        if (t.type === 'telegram_channel') {
+            iconHtml = '<i class="fab fa-telegram"></i>';
+            buttonHtml = `<button class="btn-claim" id="btn-${t.id}" onclick="startChannelTask('${t.id}','${t.link}',${t.timer || 30})">🚀 JOIN & EARN</button>`;
+        } 
+        else if (t.type === 'post_view') {
+            iconHtml = '<i class="fas fa-eye" style="color:#8b5cf6;"></i>';
+            extraInfo = `<small style="color:#8b5cf6;">⏱️ ${t.view_duration || 30} সেকেন্ড</small>`;
+            buttonHtml = `<button class="btn-claim" id="post-btn-${t.id}" onclick="startPostViewTask('${t.id}','${t.link}',${t.view_duration || 30})">👁️ ভিউ করুন</button>`;
+        } 
+        else if (t.type === 'smart_click') {
+            iconHtml = '<i class="fas fa-ad" style="color:#ff6b6b;"></i>';
+            extraInfo = `<small style="color:#ff6b6b;">📊 Adsterra</small>`;
+            buttonHtml = `<button class="btn-claim" id="smart-btn-${t.id}" onclick="startSmartClickTask('${t.id}','${t.adsterra_url || t.link}')">🌐 স্মার্ট ক্লিক</button>`;
+        }
+
+        list.innerHTML += `
+            <div class="task-card" style="animation: fadeInUp 0.3s ease;">
+                <div class="task-top">
+                    <div class="task-icon">${iconHtml}</div>
+                    <div class="task-info">
+                        <h4>${escapeHtml(t.title)}</h4>
+                        <p>${t.description || 'লিংকে ক্লিক করে কাজ শেষ করুন'}</p>
+                        ${extraInfo}
+                    </div>
+                    <div class="reward-tag">${reward}</div>
+                </div>
+                ${buttonHtml}
+            </div>
+        `;
+    });
+}
+
+
+// =============================================
+// 3. CHANNEL TASK - startChannelTask()
+// =============================================
+function startChannelTask(taskId, link, duration) {
+    if (!USER_JOINED && !confirm("Join না করলে Bonus পাবেন না. চালাবেন?")) return;
+
+    isTaskRunning = true;
+
+    fetch('/api/user/tasks/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ task_id: taskId })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            let channelUrl = link;
+            if (link.startsWith('@')) {
+                channelUrl = `https://t.me/${link.replace('@', '')}`;
+            } else if (!link.startsWith('http')) {
+                channelUrl = `https://t.me/${link}`;
+            }
+            window.open(channelUrl, '_blank');
+            showTimer(taskId, data.expires_at, 'verifyChannelTask', taskId);
+        } else {
+            showAnimatedNotification(data.message || '❌ টাইমার শুরু করতে ব্যর্থ', 'error');
+            isTaskRunning = false;
+        }
+    })
+    .catch(e => {
+        showAnimatedNotification('❌ সার্ভার ত্রুটি', 'error');
+        console.error(e);
+        isTaskRunning = false;
+    });
+}
+
+
+// =============================================
+// 4. CHANNEL TASK - verifyChannelTask()
+// =============================================
+async function verifyChannelTask(taskId) {
+    try {
+        const res = await fetch('/api/user/tasks/verify_channel', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ 
+                task_id: taskId, 
+                device_id: DEVICE_ID 
+            })
+        });
+        const data = await res.json();
+        
+        if (data.redirect) {
+            showAnimatedNotification("সেশন শেষ, পুনরায় লগইন করুন", "warning");
+            setTimeout(() => window.location.href = data.redirect, 1500);
+            isTaskRunning = false;
+        } else if (data.success) {
+            showAnimatedNotification(data.message || '✅ টাস্ক সম্পন্ন!', 'success');
+            isTaskRunning = false;
+            await initTaskPage();
+        } else {
+            showAnimatedNotification(`❌ ${data.message}`, 'error');
+            isTaskRunning = false;
+        }
+    } catch(e) {
+        showAnimatedNotification('❌ সার্ভার ত্রুটি', 'error');
+        console.error(e);
+        isTaskRunning = false;
+    }
+    }
 
 // পেজ লোড হলে বাটন সেট করো
 document.addEventListener('DOMContentLoaded', setButtonByCurrentPage);
