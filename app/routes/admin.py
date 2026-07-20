@@ -528,48 +528,50 @@ def admin_delete_task():
     else:
         return jsonify({"error": "Task not found"}), 404
 
-@admin_bp.route('/api/admin/tasks/create', methods=["POST"])
-def admin_tasks_create():
-    if not session.get("admin_logged_in"):
-        return jsonify({"error": "Unauthorized"}), 401
-    
+@admin_bp.route('/api/admin/tasks/create', methods=['POST'])
+@admin_required
+def create_task():
     data = request.json
-    task_id = secrets.token_hex(4)
-    admin = get_admin_config()
-    default_hours = admin.get("default_task_expiry_hours", 168)
-    expiry_hours = data.get("expiry_hours", default_hours)
-    expires_at = (datetime.utcnow() + timedelta(hours=expiry_hours)).isoformat()
-    verification = data.get("verification", {})
-    timer = data.get("timer", 30)
     
     task_data = {
-        "task_id": task_id,
+        "task_id": f"task_{int(datetime.utcnow().timestamp())}",
         "title": data.get("title"),
+        "type": data.get("type"),
         "link": data.get("link"),
         "reward": float(data.get("reward", 0)),
-        "type": data.get("type", "telegram_channel"),
         "currency": data.get("currency", "bdt"),
-        "expiry_hours": expiry_hours,
-        "expires_at": expires_at,
-        "created_at": datetime.utcnow(),
-        "max_users": data.get("max_users", 0),
-        "current_users": 0,
         "active": True,
-        "device_check": verification.get("device_check", True),
-        "ip_check": verification.get("ip_check", False),
-        "account_check": verification.get("account_check", True),
-        "timer": timer
+        "created_at": datetime.utcnow(),
+        "current_users": 0,
+        "max_users": int(data.get("max_users", 0)),
+        "timer": int(data.get("timer", 30)),
+        "expiry_hours": int(data.get("expiry_hours", 168)) if data.get("expiry_hours") else 0,
+        "device_check": data.get("verification", {}).get("device_check", True),
+        "ip_check": data.get("verification", {}).get("ip_check", False),
+        "account_check": data.get("verification", {}).get("account_check", True),
     }
+    
+    if data.get("type") == "post_view":
+        task_data.update({
+            "view_duration": int(data.get("view_duration", 30)),
+            "description": data.get("description", "পোস্ট দেখুন এবং রিওয়ার্ড নিন"),
+        })
+    elif data.get("type") == "smart_click":
+        task_data.update({
+            "adsterra_campaign_id": data.get("campaign_id", ""),
+            "adsterra_url": data.get("ad_url", ""),
+            "click_verify_time": int(data.get("click_time", 5)),
+            "description": data.get("description", "Adsterra বিজ্ঞাপনে ক্লিক করুন"),
+        })
+    elif data.get("type") == "telegram_channel":
+        task_data.update({
+            "channel_username": data.get("link", ""),
+            "description": data.get("description", "চ্যানেল জয়েন করুন"),
+        })
     
     db_mongo["tasks"].insert_one(task_data)
     
-    # ✅ অ্যাডমিন বট দিয়ে নোটিফিকেশন (নতুন অংশ)
-    admin_user_id = session.get("telegram_id")
-    if admin_user_id:
-        notify_admin_new_task(admin_user_id, task_id, data.get("title", "নতুন টাস্ক"))
-    
-    return jsonify({"success": True, "message": "টাস্ক তৈরি হয়েছে!", "task_id": task_id})
-
+    return jsonify({"success": True, "task_id": task_data["task_id"], "message": "✅ টাস্ক তৈরি হয়েছে!"})
 
 @admin_bp.route('/api/admin/tasks/toggle/<task_id>', methods=["POST"])
 def admin_tasks_toggle(task_id):
