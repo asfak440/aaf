@@ -3,32 +3,31 @@
 from flask import Blueprint, render_template, request, jsonify, session
 from datetime import datetime, timedelta
 from bson import ObjectId
-import secrets
 import hashlib
 
-from app import users_col, db_mongo, task_claims_col, task_orders_col, deeplink_clicks_col, admin_config_col, task_channel_status_col, device_tasks_col, ip_tasks_col, user_tasks_col, cache_col, rate_limits_col
+from app import users_col, db_mongo, task_claims_col, task_orders_col, admin_config_col, task_channel_status_col, device_tasks_col, ip_tasks_col, user_tasks_col, cache_col, rate_limits_col
 from app.utils.decorators import login_required
 from app.utils.helpers import get_admin_config, generate_task_serial, run_async
-from app.services.telegram_service import verify_user_task_smart, send_telegram_message
-from app.utils.adsterra_utils import verify_adsterra_click, send_conversion_to_adsterra, generate_click_id
+from app.services.telegram_service import verify_user_task_smart
+from app.utils.adsterra_utils import verify_adsterra_click, send_conversion_to_adsterra
 
 tasks_bp = Blueprint('tasks', __name__, url_prefix='/tasks')
 
-# ================= PAGE ROUTES =================
+
 @tasks_bp.route('/')
 @login_required
 def task():
     return render_template("tasks.html")
+
 
 @tasks_bp.route('/order')
 @login_required
 def task_order():
     return render_template("task_order.html")
 
-# ================= TASK APIs =================
+
 @tasks_bp.route('/api/tasks')
 def get_tasks():
-    # অটো ডিজেবল চেক
     auto_disable_expired_tasks()
     
     tasks = list(db_mongo["tasks"].find({
@@ -44,12 +43,9 @@ def get_tasks():
 
 
 def auto_disable_expired_tasks():
-    """
-    যেসব টাস্কের সময় শেষ হয়েছে সেগুলো অটো ডিজেবল করুন
-    """
+    """যেসব টাস্কের সময় শেষ হয়েছে সেগুলো অটো ডিজেবল করুন"""
     now = datetime.utcnow()
     
-    # ১. timer এক্সপায়ার্ড চেক
     expired_timers = db_mongo["task_timers"].find({
         "expires_at": {"$lt": now},
         "completed": False
@@ -61,19 +57,6 @@ def auto_disable_expired_tasks():
             {"$set": {"active": False, "auto_disabled": True, "disabled_at": now}}
         )
         db_mongo["task_timers"].delete_one({"_id": timer["_id"]})
-    
-    # ২. expiry_hours এক্সপায়ার্ড চেক (৭ দিন)
-    expired_tasks = db_mongo["tasks"].find({
-        "expiry_hours": {"$ne": 0},
-        "created_at": {"$lt": now - timedelta(hours=168)},
-        "active": True
-    })
-    
-    for task in expired_tasks:
-        db_mongo["tasks"].update_one(
-            {"_id": task["_id"]},
-            {"$set": {"active": False, "expired": True, "disabled_at": now}}
-        )
 
 
 @tasks_bp.route('/api/user/claimed_tasks')
@@ -98,9 +81,11 @@ def get_due_status():
     uid = session.get("uid")
     if not uid:
         return jsonify({"due": 0, "is_member": True, "details": []})
+    
     task_statuses = list(task_channel_status_col.find(
         {"user_id": uid, "is_member": False, "due_cleared": {"$ne": True}}
     ))
+    
     details = []
     for status in task_statuses:
         task_id = status.get("task_id")
@@ -115,17 +100,64 @@ def get_due_status():
             "due_amount": 1,
             "last_joined": status.get("last_joined").isoformat() if status.get("last_joined") else None
         })
+    
     total_due = len(task_statuses)
     if total_due == 0:
         message = "কোনো ডিউ নেই। সব টাস্কের চ্যানেল জয়েন করে রাখুন।"
     else:
-        message = f"⚠️ আপনার {total_due}টি টাস্কের চ্যানেলে ডিউ আছে। প্রতিটি টাস্ক কমপ্লিট করলে ১ টাকা করে কাটা হবে। চ্যানেলে পুনরায় জয়েন করুন এবং VERIFY চাপুন।"
+        message = f"⚠️ আপনার {total_due}টি টাস্কের চ্যানেলে ডিউ আছে।"
+    
     return jsonify({
         "success": True,
         "due": total_due,
         "is_member": total_due == 0,
         "message": message,
         "details": details
+    })
+
+
+# ================= TASK START TIMER =================
+@tasks_bp.route('/api/user/tasks/start', methods=["POST"])
+@login_required
+def start_task_timer():
+    uid = session.get("uid")
+    user = users_col.find_one({"_id": ObjectId(uid)})
+    if not user:
+        return jsonify({"success": False, "message": "User not found"})
+
+    data = request.json
+    task_id = data.get("task_id")
+    
+    task = db_mongo["tasks"].find_one({"task_id": task_id})
+    if not task:
+        return jsonify({"success": False, "message": "Task not found"})
+    
+    if task.get("type") == "telegram_channel":
+        duration = task.get("timer", 30)
+    elif task.get("type") == "post_view":
+        duration = task.get("view_duration", 30)
+    elif task.get("type") == "smart_click":
+        duration = task.get("click_verify_time", 5)
+    else:
+        duration = 30
+    
+    expires_at = datetime.utcnow() + timedelta(seconds=duration)
+    
+    db_mongo["task_timers"].update_one(
+        {"telegram_id": user["telegram_id"], "task_id": task_id},
+        {"$set": {
+            "duration": duration,
+            "started_at": datetime.utcnow(),
+            "expires_at": expires_at,
+            "completed": False
+        }},
+        upsert=True
+    )
+    
+    return jsonify({
+        "success": True,
+        "message": f"টাইমার শুরু! {duration} সেকেন্ড সময় আছে।",
+        "expires_at": expires_at.isoformat()
     })
 
 
@@ -155,40 +187,28 @@ def verify_channel_task():
     })
     
     if not timer:
-        return jsonify({
-            "success": False, 
-            "message": "⚠️ আপনি টাস্ক শুরু করেননি বা টাইমার শেষ!"
-        })
+        return jsonify({"success": False, "message": "⚠️ আপনি টাস্ক শুরু করেননি বা টাইমার শেষ!"})
     
     if datetime.utcnow() > timer["expires_at"]:
         db_mongo["tasks"].update_one(
             {"task_id": task_id},
             {"$set": {"active": False, "auto_disabled": True}}
         )
-        return jsonify({
-            "success": False, 
-            "message": "⏰ সময় শেষ! টাস্কটি বন্ধ করা হয়েছে।"
-        })
+        return jsonify({"success": False, "message": "⏰ সময় শেষ! টাস্কটি বন্ধ করা হয়েছে。"})
 
-    # MAX_USERS চেক
     if task.get("max_users", 0) > 0:
         current = task.get("current_users", 0)
         if current >= task["max_users"]:
-            return jsonify({
-                "success": False, 
-                "message": f"⚠️ এই টাস্কে আর জায়গা নেই! (সর্বোচ্চ {task['max_users']} জন)"
-            })
+            return jsonify({"success": False, "message": f"⚠️ এই টাস্কে আর জায়গা নেই!"})
 
     admin = get_admin_config()
     global_rules = admin.get("task_rules", {})
 
-    # ডিভাইস চেক
     device_check = task.get("device_check", global_rules.get("device_check", True))
     if device_check and device_id:
         if db_mongo["device_tasks"].find_one({"task_id": task_id, "device_id": device_id}):
-            return jsonify({"success": False, "message": "এই ডিভাইস ইতিমধ্যে টাস্ক ক্লেইম করেছে।"})
+            return jsonify({"success": False, "message": "এই ডিভাইস ইতিমধ্যে টাস্ক ক্লেইম করেছে。"})
 
-    # আইপি চেক
     ip_check = task.get("ip_check", global_rules.get("ip_check", False))
     ip_limit = admin.get("ip_limit_per_hour", 5)
     if ip_check and user_ip:
@@ -196,16 +216,15 @@ def verify_channel_task():
         ip_record = db_mongo["ip_tasks"].find_one({"task_id": task_id, "ip": user_ip})
         if ip_record and ip_record.get("timestamp", 0) > now_ts - 3600:
             if ip_record.get("count", 0) >= ip_limit:
-                return jsonify({"success": False, "message": f"আইপি থেকে প্রতি ঘন্টায় সর্বোচ্চ {ip_limit} বার ক্লেইম করা যাবে।"})
+                return jsonify({"success": False, "message": f"আইপি থেকে প্রতি ঘন্টায় সর্বোচ্চ {ip_limit} বার ক্লেইম করা যাবে。"})
 
-    # অ্যাকাউন্ট চেক
     account_check = task.get("account_check", global_rules.get("account_check", True))
     if account_check:
         if db_mongo["user_tasks"].find_one({"telegram_id": user["telegram_id"], "task_id": task_id}):
-            return jsonify({"success": False, "message": "আপনি ইতিমধ্যে এই টাস্ক ক্লেইম করেছেন।"})
+            return jsonify({"success": False, "message": "আপনি ইতিমধ্যে এই টাস্ক ক্লেইম করেছেন。"})
 
     if task_claims_col.find_one({"telegram_id": user["telegram_id"], "task_id": task_id}):
-        return jsonify({"success": False, "message": "আপনি ইতিমধ্যে এই টাস্ক সম্পন্ন করেছেন।"})
+        return jsonify({"success": False, "message": "আপনি ইতিমধ্যে এই টাস্ক সম্পন্ন করেছেন。"})
 
     # চ্যানেল ভেরিফিকেশন
     channel = task.get("link", "").strip()
@@ -218,9 +237,9 @@ def verify_channel_task():
 
     is_member = verify_user_task_smart(user["telegram_id"], channel)
     if not is_member:
-        return jsonify({"success": False, "message": "আপনি এখনো চ্যানেলে জয়েন করেননি।"})
+        return jsonify({"success": False, "message": "আপনি এখনো চ্যানেলে জয়েন করেননি。"})
 
-    # সব চেক পাস — সেভ ও টাকা দিন
+    # টাকা দিন
     if device_check and device_id:
         db_mongo["device_tasks"].insert_one({"task_id": task_id, "device_id": device_id, "created_at": datetime.utcnow()})
 
@@ -241,37 +260,17 @@ def verify_channel_task():
         upsert=True
     )
 
-    task_channel_status = task_channel_status_col.find_one({"user_id": str(user["_id"]), "task_id": task_id})
-
     reward = task.get("reward", 0)
     currency = task.get("currency", "cash")
-    final_reward = reward
-
-    if task_channel_status and task_channel_status.get("is_member") == False:
-        due_amount = admin.get("task_channel_leave_penalty", 50)
-        final_reward = max(0, reward - due_amount)
-        task_channel_status_col.update_one(
-            {"user_id": str(user["_id"]), "task_id": task_id},
-            {"$set": {"due_cleared": True}}
-        )
-
+    
     if currency == "aaf":
-        users_col.update_one({"_id": user["_id"]}, {"$inc": {"aaf": final_reward}})
+        users_col.update_one({"_id": user["_id"]}, {"$inc": {"aaf": reward}})
     else:
-        users_col.update_one({"_id": user["_id"]}, {"$inc": {"cash": final_reward}})
-
-    if final_reward != reward:
-        msg = f"✅ টাস্ক সম্পন্ন! ডিউ কাটা হয়েছে: -৳{reward - final_reward}"
-    else:
-        msg = f"✅ টাস্ক সম্পন্ন! Received ৳{final_reward}"
+        users_col.update_one({"_id": user["_id"]}, {"$inc": {"cash": reward}})
 
     users_col.update_one({"_id": user["_id"]}, {"$inc": {"tasks_done": 1}})
-    db_mongo["tasks"].update_one(
-        {"task_id": task_id},
-        {"$inc": {"current_users": 1}}
-    )
+    db_mongo["tasks"].update_one({"task_id": task_id}, {"$inc": {"current_users": 1}})
 
-    # টাইমার কমপ্লিটেড মার্ক করুন
     db_mongo["task_timers"].update_one(
         {"_id": timer["_id"]},
         {"$set": {"completed": True, "completed_at": datetime.utcnow()}}
@@ -290,7 +289,7 @@ def verify_channel_task():
         "created_at": datetime.utcnow()
     })
 
-    return jsonify({"success": True, "message": msg})
+    return jsonify({"success": True, "message": f"✅ টাস্ক সম্পন্ন! Received ৳{reward}"})
 
 
 # ================= POST VIEW TASK =================
@@ -315,7 +314,6 @@ def verify_post_view():
     if task.get("type") != "post_view":
         return jsonify({"success": False, "message": "Invalid task type"})
 
-    # টাইমার চেক
     timer = db_mongo["task_timers"].find_one({
         "telegram_id": user["telegram_id"],
         "task_id": task_id,
@@ -323,22 +321,15 @@ def verify_post_view():
     })
     
     if not timer:
-        return jsonify({
-            "success": False, 
-            "message": "⚠️ আপনি টাস্ক শুরু করেননি বা টাইমার শেষ!"
-        })
+        return jsonify({"success": False, "message": "⚠️ আপনি টাস্ক শুরু করেননি বা টাইমার শেষ!"})
     
     if datetime.utcnow() > timer["expires_at"]:
         db_mongo["tasks"].update_one(
             {"task_id": task_id},
             {"$set": {"active": False, "auto_disabled": True}}
         )
-        return jsonify({
-            "success": False, 
-            "message": "⏰ সময় শেষ! টাস্কটি বন্ধ করা হয়েছে।"
-        })
+        return jsonify({"success": False, "message": "⏰ সময় শেষ! টাস্কটি বন্ধ করা হয়েছে。"})
 
-    # ভিউ টাইম চেক
     required_duration = task.get("view_duration", 30)
     if view_duration < required_duration:
         return jsonify({
@@ -346,25 +337,19 @@ def verify_post_view():
             "message": f"আপনি {required_duration} সেকেন্ড পুরো দেখেননি। দেখেছেন {view_duration} সেকেন্ড।"
         })
 
-    # MAX_USERS চেক
     if task.get("max_users", 0) > 0:
         current = task.get("current_users", 0)
         if current >= task["max_users"]:
-            return jsonify({
-                "success": False, 
-                "message": f"⚠️ এই টাস্কে আর জায়গা নেই!"
-            })
+            return jsonify({"success": False, "message": f"⚠️ এই টাস্কে আর জায়গা নেই!"})
 
     admin = get_admin_config()
     global_rules = admin.get("task_rules", {})
 
-    # ডিভাইস চেক
     device_check = task.get("device_check", global_rules.get("device_check", True))
     if device_check and device_id:
         if db_mongo["device_tasks"].find_one({"task_id": task_id, "device_id": device_id}):
-            return jsonify({"success": False, "message": "এই ডিভাইস ইতিমধ্যে টাস্ক ক্লেইম করেছে।"})
+            return jsonify({"success": False, "message": "এই ডিভাইস ইতিমধ্যে টাস্ক ক্লেইম করেছে。"})
 
-    # আইপি চেক
     ip_check = task.get("ip_check", global_rules.get("ip_check", False))
     ip_limit = admin.get("ip_limit_per_hour", 5)
     if ip_check and user_ip:
@@ -372,24 +357,19 @@ def verify_post_view():
         ip_record = db_mongo["ip_tasks"].find_one({"task_id": task_id, "ip": user_ip})
         if ip_record and ip_record.get("timestamp", 0) > now_ts - 3600:
             if ip_record.get("count", 0) >= ip_limit:
-                return jsonify({"success": False, "message": f"আইপি থেকে প্রতি ঘন্টায় সর্বোচ্চ {ip_limit} বার ক্লেইম করা যাবে।"})
+                return jsonify({"success": False, "message": f"আইপি থেকে প্রতি ঘন্টায় সর্বোচ্চ {ip_limit} বার ক্লেইম করা যাবে。"})
 
-    # অ্যাকাউন্ট চেক
     account_check = task.get("account_check", global_rules.get("account_check", True))
     if account_check:
         if db_mongo["user_tasks"].find_one({"telegram_id": user["telegram_id"], "task_id": task_id}):
-            return jsonify({"success": False, "message": "আপনি ইতিমধ্যে এই টাস্ক ক্লেইম করেছেন।"})
+            return jsonify({"success": False, "message": "আপনি ইতিমধ্যে এই টাস্ক ক্লেইম করেছেন。"})
 
     if task_claims_col.find_one({"telegram_id": user["telegram_id"], "task_id": task_id}):
-        return jsonify({"success": False, "message": "আপনি ইতিমধ্যে এই টাস্ক সম্পন্ন করেছেন।")
+        return jsonify({"success": False, "message": "আপনি ইতিমধ্যে এই টাস্ক সম্পন্ন করেছেন。"})
 
-    # সব চেক পাস - টাকা দিন
+    # টাকা দিন
     if device_check and device_id:
-        db_mongo["device_tasks"].insert_one({
-            "task_id": task_id, 
-            "device_id": device_id, 
-            "created_at": datetime.utcnow()
-        })
+        db_mongo["device_tasks"].insert_one({"task_id": task_id, "device_id": device_id, "created_at": datetime.utcnow()})
 
     if ip_check and user_ip:
         now_ts = datetime.utcnow().timestamp()
@@ -400,13 +380,8 @@ def verify_post_view():
         )
 
     if account_check:
-        db_mongo["user_tasks"].insert_one({
-            "telegram_id": user["telegram_id"], 
-            "task_id": task_id, 
-            "created_at": datetime.utcnow()
-        })
+        db_mongo["user_tasks"].insert_one({"telegram_id": user["telegram_id"], "task_id": task_id, "created_at": datetime.utcnow()})
 
-    # পোস্ট ভিউ ট্র্যাক
     db_mongo["post_views"].insert_one({
         "telegram_id": user["telegram_id"],
         "task_id": task_id,
@@ -419,32 +394,14 @@ def verify_post_view():
     reward = task.get("reward", 0)
     currency = task.get("currency", "cash")
     
-    task_channel_status = task_channel_status_col.find_one({
-        "user_id": str(user["_id"]), 
-        "task_id": task_id
-    })
-    
-    final_reward = reward
-    if task_channel_status and task_channel_status.get("is_member") == False:
-        due_amount = admin.get("task_channel_leave_penalty", 50)
-        final_reward = max(0, reward - due_amount)
-        task_channel_status_col.update_one(
-            {"user_id": str(user["_id"]), "task_id": task_id},
-            {"$set": {"due_cleared": True}}
-        )
-
     if currency == "aaf":
-        users_col.update_one({"_id": user["_id"]}, {"$inc": {"aaf": final_reward}})
+        users_col.update_one({"_id": user["_id"]}, {"$inc": {"aaf": reward}})
     else:
-        users_col.update_one({"_id": user["_id"]}, {"$inc": {"cash": final_reward}})
+        users_col.update_one({"_id": user["_id"]}, {"$inc": {"cash": reward}})
 
     users_col.update_one({"_id": user["_id"]}, {"$inc": {"tasks_done": 1}})
-    db_mongo["tasks"].update_one(
-        {"task_id": task_id},
-        {"$inc": {"current_users": 1}}
-    )
+    db_mongo["tasks"].update_one({"task_id": task_id}, {"$inc": {"current_users": 1}})
 
-    # টাইমার কমপ্লিটেড মার্ক করুন
     db_mongo["task_timers"].update_one(
         {"_id": timer["_id"]},
         {"$set": {"completed": True, "completed_at": datetime.utcnow()}}
@@ -462,11 +419,7 @@ def verify_post_view():
         "created_at": datetime.utcnow()
     })
 
-    msg = f"✅ টাস্ক সম্পন্ন! Received ৳{final_reward}"
-    if final_reward != reward:
-        msg = f"✅ টাস্ক সম্পন্ন! ডিউ কাটা হয়েছে: -৳{reward - final_reward}"
-
-    return jsonify({"success": True, "message": msg})
+    return jsonify({"success": True, "message": f"✅ টাস্ক সম্পন্ন! Received ৳{reward}"})
 
 
 # ================= SMART CLICK TASK =================
@@ -491,7 +444,6 @@ def verify_smart_click():
     if task.get("type") != "smart_click":
         return jsonify({"success": False, "message": "Invalid task type"})
 
-    # টাইমার চেক
     timer = db_mongo["task_timers"].find_one({
         "telegram_id": user["telegram_id"],
         "task_id": task_id,
@@ -499,49 +451,33 @@ def verify_smart_click():
     })
     
     if not timer:
-        return jsonify({
-            "success": False, 
-            "message": "⚠️ আপনি টাস্ক শুরু করেননি বা টাইমার শেষ!"
-        })
+        return jsonify({"success": False, "message": "⚠️ আপনি টাস্ক শুরু করেননি বা টাইমার শেষ!"})
     
     if datetime.utcnow() > timer["expires_at"]:
         db_mongo["tasks"].update_one(
             {"task_id": task_id},
             {"$set": {"active": False, "auto_disabled": True}}
         )
-        return jsonify({
-            "success": False, 
-            "message": "⏰ সময় শেষ! টাস্কটি বন্ধ করা হয়েছে।"
-        })
+        return jsonify({"success": False, "message": "⏰ সময় শেষ! টাস্কটি বন্ধ করা হয়েছে。"})
 
     # Adsterra ক্লিক ভেরিফিকেশন
     is_valid, message = verify_adsterra_click(click_id, user["telegram_id"])
-    
     if not is_valid:
-        return jsonify({
-            "success": False, 
-            "message": f"❌ Adsterra ক্লিক ভেরিফাই করা যায়নি: {message}"
-        })
+        return jsonify({"success": False, "message": f"❌ {message}"})
 
-    # MAX_USERS চেক
     if task.get("max_users", 0) > 0:
         current = task.get("current_users", 0)
         if current >= task["max_users"]:
-            return jsonify({
-                "success": False, 
-                "message": f"⚠️ এই টাস্কে আর জায়গা নেই!"
-            })
+            return jsonify({"success": False, "message": f"⚠️ এই টাস্কে আর জায়গা নেই!"})
 
     admin = get_admin_config()
     global_rules = admin.get("task_rules", {})
 
-    # ডিভাইস চেক
     device_check = task.get("device_check", global_rules.get("device_check", True))
     if device_check and device_id:
         if db_mongo["device_tasks"].find_one({"task_id": task_id, "device_id": device_id}):
-            return jsonify({"success": False, "message": "এই ডিভাইস ইতিমধ্যে টাস্ক ক্লেইম করেছে।"})
+            return jsonify({"success": False, "message": "এই ডিভাইস ইতিমধ্যে টাস্ক ক্লেইম করেছে。"})
 
-    # আইপি চেক
     ip_check = task.get("ip_check", global_rules.get("ip_check", False))
     ip_limit = admin.get("ip_limit_per_hour", 5)
     if ip_check and user_ip:
@@ -549,24 +485,19 @@ def verify_smart_click():
         ip_record = db_mongo["ip_tasks"].find_one({"task_id": task_id, "ip": user_ip})
         if ip_record and ip_record.get("timestamp", 0) > now_ts - 3600:
             if ip_record.get("count", 0) >= ip_limit:
-                return jsonify({"success": False, "message": f"আইপি থেকে প্রতি ঘন্টায় সর্বোচ্চ {ip_limit} বার ক্লেইম করা যাবে।"})
+                return jsonify({"success": False, "message": f"আইপি থেকে প্রতি ঘন্টায় সর্বোচ্চ {ip_limit} বার ক্লেইম করা যাবে。"})
 
-    # অ্যাকাউন্ট চেক
     account_check = task.get("account_check", global_rules.get("account_check", True))
     if account_check:
         if db_mongo["user_tasks"].find_one({"telegram_id": user["telegram_id"], "task_id": task_id}):
-            return jsonify({"success": False, "message": "আপনি ইতিমধ্যে এই টাস্ক ক্লেইম করেছেন।"})
+            return jsonify({"success": False, "message": "আপনি ইতিমধ্যে এই টাস্ক ক্লেইম করেছেন。"})
 
     if task_claims_col.find_one({"telegram_id": user["telegram_id"], "task_id": task_id}):
-        return jsonify({"success": False, "message": "আপনি ইতিমধ্যে এই টাস্ক সম্পন্ন করেছেন।")
+        return jsonify({"success": False, "message": "আপনি ইতিমধ্যে এই টাস্ক সম্পন্ন করেছেন。"})
 
-    # সব চেক পাস - টাকা দিন
+    # টাকা দিন
     if device_check and device_id:
-        db_mongo["device_tasks"].insert_one({
-            "task_id": task_id, 
-            "device_id": device_id, 
-            "created_at": datetime.utcnow()
-        })
+        db_mongo["device_tasks"].insert_one({"task_id": task_id, "device_id": device_id, "created_at": datetime.utcnow()})
 
     if ip_check and user_ip:
         now_ts = datetime.utcnow().timestamp()
@@ -577,48 +508,26 @@ def verify_smart_click():
         )
 
     if account_check:
-        db_mongo["user_tasks"].insert_one({
-            "telegram_id": user["telegram_id"], 
-            "task_id": task_id, 
-            "created_at": datetime.utcnow()
-        })
+        db_mongo["user_tasks"].insert_one({"telegram_id": user["telegram_id"], "task_id": task_id, "created_at": datetime.utcnow()})
 
     reward = task.get("reward", 0)
     currency = task.get("currency", "cash")
     
-    task_channel_status = task_channel_status_col.find_one({
-        "user_id": str(user["_id"]), 
-        "task_id": task_id
-    })
-    
-    final_reward = reward
-    if task_channel_status and task_channel_status.get("is_member") == False:
-        due_amount = admin.get("task_channel_leave_penalty", 50)
-        final_reward = max(0, reward - due_amount)
-        task_channel_status_col.update_one(
-            {"user_id": str(user["_id"]), "task_id": task_id},
-            {"$set": {"due_cleared": True}}
-        )
-
     if currency == "aaf":
-        users_col.update_one({"_id": user["_id"]}, {"$inc": {"aaf": final_reward}})
+        users_col.update_one({"_id": user["_id"]}, {"$inc": {"aaf": reward}})
     else:
-        users_col.update_one({"_id": user["_id"]}, {"$inc": {"cash": final_reward}})
+        users_col.update_one({"_id": user["_id"]}, {"$inc": {"cash": reward}})
 
     users_col.update_one({"_id": user["_id"]}, {"$inc": {"tasks_done": 1}})
-    db_mongo["tasks"].update_one(
-        {"task_id": task_id},
-        {"$inc": {"current_users": 1}}
-    )
+    db_mongo["tasks"].update_one({"task_id": task_id}, {"$inc": {"current_users": 1}})
 
-    # টাইমার কমপ্লিটেড মার্ক করুন
     db_mongo["task_timers"].update_one(
         {"_id": timer["_id"]},
         {"$set": {"completed": True, "completed_at": datetime.utcnow()}}
     )
 
-    # Adsterra কনভার্সন রিপোর্ট করুন
-    send_conversion_to_adsterra(click_id, final_reward)
+    # Adsterra কনভার্সন রিপোর্ট
+    send_conversion_to_adsterra(click_id, reward)
 
     serial_number = generate_task_serial()
     task_claims_col.insert_one({
@@ -632,66 +541,7 @@ def verify_smart_click():
         "created_at": datetime.utcnow()
     })
 
-    msg = f"✅ স্মার্ট ক্লিক সম্পন্ন! Received ৳{final_reward}"
-    if final_reward != reward:
-        msg = f"✅ স্মার্ট ক্লিক সম্পন্ন! ডিউ কাটা হয়েছে: -৳{reward - final_reward}"
-
-    return jsonify({"success": True, "message": msg})
-
-
-# ================= TASK START TIMER =================
-@tasks_bp.route('/api/user/tasks/start', methods=["POST"])
-@login_required
-def start_task_timer():
-    """
-    ইউজার টাস্ক স্টার্ট করলে টাইমার রেকর্ড করুন
-    """
-    uid = session.get("uid")
-    user = users_col.find_one({"_id": ObjectId(uid)})
-    if not user:
-        return jsonify({"success": False, "message": "User not found"})
-
-    data = request.json
-    task_id = data.get("task_id")
-    
-    task = db_mongo["tasks"].find_one({"task_id": task_id})
-    if not task:
-        return jsonify({"success": False, "message": "Task not found"})
-    
-    # টাস্ক টাইপ অনুযায়ী টাইমার সেট করুন
-    if task.get("type") == "telegram_channel":
-        duration = task.get("timer", 30)
-    elif task.get("type") == "post_view":
-        duration = task.get("view_duration", 30)
-    elif task.get("type") == "smart_click":
-        duration = task.get("click_verify_time", 5)
-    else:
-        duration = 30
-    
-    # টাইমার সেভ করুন
-    expires_at = datetime.utcnow() + timedelta(seconds=duration)
-    
-    db_mongo["task_timers"].update_one(
-        {
-            "telegram_id": user["telegram_id"],
-            "task_id": task_id
-        },
-        {
-            "$set": {
-                "duration": duration,
-                "started_at": datetime.utcnow(),
-                "expires_at": expires_at,
-                "completed": False
-            }
-        },
-        upsert=True
-    )
-    
-    return jsonify({
-        "success": True,
-        "message": f"টাইমার শুরু! {duration} সেকেন্ড সময় আছে।",
-        "expires_at": expires_at.isoformat()
-    })
+    return jsonify({"success": True, "message": f"✅ স্মার্ট ক্লিক সম্পন্ন! Received ৳{reward}"})
 
 
 # ================= TASK ORDER =================
@@ -735,108 +585,3 @@ def submit_task_order():
     }
     task_orders_col.insert_one(order)
     return jsonify({"success": True, "message": "Order submitted"})
-
-
-# ================= Adsterra Reward Helper =================
-def give_reward_for_adsterra(telegram_id, click_id):
-    """
-    Adsterra Postback থেকে কল হবে
-    """
-    try:
-        user = users_col.find_one({"telegram_id": telegram_id})
-        if not user:
-            return
-        
-        # টাস্ক খুঁজুন যেটাতে এই ক্লিক ব্যবহার হয়েছে
-        task_claim = db_mongo["task_claims"].find_one({
-            "telegram_id": telegram_id,
-            "click_id": click_id,
-            "status": "pending"
-        })
-        
-        if not task_claim:
-            return
-        
-        # রিওয়ার্ড দিন
-        task = db_mongo["tasks"].find_one({"task_id": task_claim["task_id"]})
-        if not task:
-            return
-        
-        reward = task.get("reward", 0)
-        currency = task.get("currency", "cash")
-        
-        if currency == "aaf":
-            users_col.update_one(
-                {"_id": user["_id"]}, 
-                {"$inc": {"aaf": reward}}
-            )
-        else:
-            users_col.update_one(
-                {"_id": user["_id"]}, 
-                {"$inc": {"cash": reward}}
-            )
-        
-        # টাস্ক ক্লেইম আপডেট করুন
-        db_mongo["task_claims"].update_one(
-            {"_id": task_claim["_id"]},
-            {"$set": {"status": "approved", "approved_at": datetime.utcnow()}}
-        )
-        
-        print(f"✅ Reward given to user {telegram_id} for click {click_id}")
-        
-    except Exception as e:
-        print(f"Error giving reward: {e}")
-```
-
----
-
-📝 ধাপ ৪: app/routes/admin.py - আপডেট করুন (শুধু টাস্ক অংশ)
-
-```python
-# app/routes/admin.py - টাস্ক তৈরির অংশ যোগ করুন
-
-@admin_bp.route('/api/admin/tasks/create', methods=['POST'])
-@admin_required
-def create_task():
-    data = request.json
-    
-    task_data = {
-        "task_id": f"task_{int(datetime.utcnow().timestamp())}",
-        "title": data.get("title"),
-        "type": data.get("type"),
-        "link": data.get("link"),
-        "reward": float(data.get("reward", 0)),
-        "currency": data.get("currency", "bdt"),
-        "active": True,
-        "created_at": datetime.utcnow(),
-        "current_users": 0,
-        "max_users": int(data.get("max_users", 0)),
-        "timer": int(data.get("timer", 30)),
-        "expiry_hours": int(data.get("expiry_hours", 168)) if data.get("expiry_hours") else 0,
-        "device_check": data.get("verification", {}).get("device_check", True),
-        "ip_check": data.get("verification", {}).get("ip_check", False),
-        "account_check": data.get("verification", {}).get("account_check", True),
-    }
-    
-    # টাস্ক টাইপ অনুযায়ী অতিরিক্ত ফিল্ড
-    if data.get("type") == "post_view":
-        task_data.update({
-            "view_duration": int(data.get("view_duration", 30)),
-            "description": data.get("description", "পোস্ট দেখুন এবং রিওয়ার্ড নিন"),
-        })
-    elif data.get("type") == "smart_click":
-        task_data.update({
-            "adsterra_campaign_id": data.get("campaign_id", ""),
-            "adsterra_url": data.get("ad_url", ""),
-            "click_verify_time": int(data.get("click_time", 5)),
-            "description": data.get("description", "Adsterra বিজ্ঞাপনে ক্লিক করুন"),
-        })
-    elif data.get("type") == "telegram_channel":
-        task_data.update({
-            "channel_username": data.get("link", ""),
-            "description": data.get("description", "চ্যানেল জয়েন করুন"),
-        })
-    
-    db_mongo["tasks"].insert_one(task_data)
-    
-    return jsonify({"success": True, "task_id": task_data["task_id"], "message": "✅ টাস্ক তৈরি হয়েছে!"})
