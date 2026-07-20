@@ -18,6 +18,7 @@ MONGO_URI = os.environ.get(
 )
 if not MONGO_URI:
     raise ValueError("MONGO_URI environment variable not set")
+
 # ================= DB CLIENT =================
 client = MongoClient(MONGO_URI)
 db_mongo = client["aaf_tele_earn_db"]
@@ -44,10 +45,10 @@ cache_col = db_mongo["stat_cache"]
 rate_limits_col = db_mongo["rate_limits"]
 
 # ================= 🆕 NEW COLLECTIONS (Adsterra + Timer + Post Views) =================
-task_timers_col = db_mongo["task_timers"]          # টাস্ক টাইমার ট্র্যাক
-adsterra_clicks_col = db_mongo["adsterra_clicks"]  # Adsterra ক্লিক ট্র্যাক
-adsterra_conversions_col = db_mongo["adsterra_conversions"]  # Adsterra কনভার্সন
-post_views_col = db_mongo["post_views"]            # পোস্ট ভিউ ট্র্যাক
+task_timers_col = db_mongo["task_timers"]
+adsterra_clicks_col = db_mongo["adsterra_clicks"]
+adsterra_conversions_col = db_mongo["adsterra_conversions"]
+post_views_col = db_mongo["post_views"]
 
 # ================= INDEXES =================
 try:
@@ -123,7 +124,7 @@ def create_app():
     from app.routes.account import account_bp
     from app.routes.admin import admin_bp
     from app.routes.api import api_bp
-    from app.routes.adsterra import adsterra_bp  # 🆕 Adsterra Blueprint
+    from app.routes.adsterra import adsterra_bp
 
     app.register_blueprint(auth_bp) 
     app.register_blueprint(dashboard_bp)
@@ -133,12 +134,12 @@ def create_app():
     app.register_blueprint(account_bp)
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(api_bp)
-    app.register_blueprint(adsterra_bp, url_prefix='/adsterra')  # 🆕
+    app.register_blueprint(adsterra_bp, url_prefix='/adsterra')
 
     # ========== Start Background Threads ==========
     from app.services.price_service import start_price_thread
     start_price_thread()
-    আদদ ততথথখ 
+
     # 🆕 Auto-disable scheduler start
     start_auto_disable_scheduler()
 
