@@ -238,7 +238,7 @@ async function toggleTaskMode() {
         btn.style.color = '#000';
         await loadTasksFromAPI('/api/tasks_order');
     }
-}
+    }
 
 async function loadTasksFromAPI(apiUrl) {
     const taskContainer = document.getElementById('main-task-list');
@@ -301,7 +301,7 @@ async function initTaskPage() {
 
         // ডিফল্ট টাস্ক লোড (Task মোড)
         isTaskMode = true;
-        await loadTasksFromAPI('/api/tasks');
+        await loadTasksFromAPI('/api/tasks_order/active');
 
         // বাটনের ডিফল্ট স্টাইল সেট করুন
         const btn = document.getElementById('taskToggleBtn');
