@@ -188,7 +188,9 @@ const API = window.location.origin;
 const TG_KEY = "telegram_id";
 let DEVICE_ID = "";
 let USER_JOINED = false;
-let isTaskMode = true;  // true = Task Mode, false = Task Order Mode
+let isTaskMode = true;  // true = Task
+let isTaskRunning = false; 
+Mode, false = Task Order Mode
 let isTaskRunning = false;  // 👈 এই লাইনটি যোগ করুন
 
 
@@ -850,6 +852,27 @@ async function verifyChannelTask(taskId) {
     }
     }
 
+async function loadDueStatus() {
+    try {
+        const res = await fetch('/api/user/due_status', { credentials: 'include' });
+        const data = await res.json();
+        if (data.success && data.due > 0) {
+            const warnDiv = document.getElementById('due-warning');
+            if (warnDiv) {
+                warnDiv.style.display = 'block';
+                warnDiv.innerHTML = `
+                    <div style="background: rgba(255,100,0,0.2); border: 1px solid #ffaa00; border-radius: 10px; padding: 10px; margin: 10px 0;">
+                        <i class="fas fa-exclamation-triangle" style="color: #ffaa00;"></i>
+                        <strong style="font-size: 12px;">${data.message}</strong>
+                    </div>
+                `;
+            }
+        } else {
+            const warnDiv = document.getElementById('due-warning');
+            if (warnDiv) warnDiv.style.display = 'none';
+        }
+    } catch(e) { console.log("Due status error", e); }
+}
 // পেজ লোড হলে বাটন সেট করো
 document.addEventListener('DOMContentLoaded', setButtonByCurrentPage);
 </script>
