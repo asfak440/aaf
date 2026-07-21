@@ -65,7 +65,7 @@ try:
     db_mongo['candles_1h'].create_index([("time", -1)])
     db_mongo['candles_4h'].create_index([("time", -1)])
     db_mongo['candles_1d'].create_index([("time", -1)])
-    
+
     # 🆕 নতুন কালেকশনের জন্য ইনডেক্স
     db_mongo['task_timers'].create_index([("telegram_id", 1), ("task_id", 1)])
     db_mongo['task_timers'].create_index([("expires_at", 1)])
@@ -74,7 +74,7 @@ try:
     db_mongo['adsterra_clicks'].create_index([("created_at", -1)])
     db_mongo['post_views'].create_index([("telegram_id", 1), ("task_id", 1)])
     db_mongo['post_views'].create_index([("created_at", -1)])
-    
+
     # ইউজার ও টাস্ক ইনডেক্স
     db_mongo['users'].create_index([("telegram_id", 1)], unique=True)
     db_mongo['tasks'].create_index([("task_id", 1)], unique=True)
@@ -82,7 +82,7 @@ try:
     db_mongo['task_claims'].create_index([("telegram_id", 1), ("task_id", 1)])
     db_mongo['task_claims'].create_index([("status", 1)])
     db_mongo['task_claims'].create_index([("created_at", -1)])
-    
+
     print("✅ সব ইনডেক্স সক্রিয় হয়েছে!")
 except Exception as e:
     print(f"⚠️ ইনডেক্স তৈরিতে সমস্যা: {e}")
@@ -132,7 +132,7 @@ def create_app():
     app.register_blueprint(trading_bp)
     app.register_blueprint(wallet_bp)
     app.register_blueprint(account_bp)
-    app.register_blueprint(admin_bp, url_prefix='/admin')
+    app.register_blueprint(admin_bp)  # ✅ url_prefix বাদ দেওয়া হয়েছে
     app.register_blueprint(api_bp)
     app.register_blueprint(adsterra_bp, url_prefix='/adsterra')
 
@@ -155,13 +155,13 @@ def start_auto_disable_scheduler():
         while True:
             try:
                 now = datetime.utcnow()
-                
+
                 # ১. timer এক্সপায়ার্ড টাস্ক ডিজেবল
                 expired_timers = db_mongo["task_timers"].find({
                     "expires_at": {"$lt": now},
                     "completed": False
                 })
-                
+
                 for timer in expired_timers:
                     db_mongo["tasks"].update_one(
                         {"task_id": timer["task_id"]},
@@ -174,13 +174,13 @@ def start_auto_disable_scheduler():
                     )
                     db_mongo["task_timers"].delete_one({"_id": timer["_id"]})
                     print(f"⏰ Auto-disabled: {timer['task_id']}")
-                
+
                 # ২. ৫ মিনিটের বেশি পুরনো pending ক্লেইম
                 old_claims = db_mongo["task_claims"].find({
                     "status": "pending",
                     "created_at": {"$lt": now - timedelta(seconds=300)}
                 })
-                
+
                 for claim in old_claims:
                     db_mongo["tasks"].update_one(
                         {"task_id": claim["task_id"]},
@@ -191,27 +191,27 @@ def start_auto_disable_scheduler():
                         {"$set": {"status": "expired"}}
                     )
                     print(f"⏰ Claim expired: {claim['task_id']}")
-                
+
                 # ৩. expiry_hours চেক (ডিফল্ট ৭ দিন)
                 expired_tasks = db_mongo["tasks"].find({
                     "expiry_hours": {"$ne": 0},
                     "created_at": {"$lt": now - timedelta(hours=168)},
                     "active": True
                 })
-                
+
                 for task in expired_tasks:
                     db_mongo["tasks"].update_one(
                         {"_id": task["_id"]},
                         {"$set": {"active": False, "expired": True}}
                     )
                     print(f"⏰ Task expired: {task['task_id']}")
-                
+
             except Exception as e:
                 print(f"⚠️ Scheduler error: {e}")
-            
+
             # প্রতি ৩০ সেকেন্ড পর পর চেক করুন
             time.sleep(30)
-    
+
     # ব্যাকগ্রাউন্ড থ্রেড শুরু করুন
     thread = threading.Thread(target=check_expired_tasks, daemon=True)
     thread.start()
