@@ -1,18 +1,29 @@
-# app/routes/tasks.py
-
 from flask import Blueprint, render_template, request, jsonify, session
 from datetime import datetime, timedelta
 from bson import ObjectId
 import hashlib
 
-from app import users_col, db_mongo, task_claims_col, task_orders_col, admin_config_col, task_channel_status_col, device_tasks_col, ip_tasks_col, user_tasks_col, cache_col, rate_limits_col
+from app import (
+    users_col, 
+    db_mongo, 
+    task_claims_col, 
+    task_orders_col, 
+    admin_config_col, 
+    task_channel_status_col, 
+    device_tasks_col, 
+    ip_tasks_col, 
+    user_tasks_col, 
+    cache_col, 
+    rate_limits_col,
+    task_timers_col,      # ← যোগ করুন
+    post_views_col        # ← যোগ করুন
+)
 from app.utils.decorators import login_required
 from app.utils.helpers import get_admin_config, generate_task_serial, run_async
 from app.services.telegram_service import verify_user_task_smart
 from app.utils.adsterra_utils import verify_adsterra_click, send_conversion_to_adsterra
 
 tasks_bp = Blueprint('tasks', __name__, url_prefix='/tasks')
-
 
 @tasks_bp.route('/')
 @login_required
