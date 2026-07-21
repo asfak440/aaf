@@ -301,7 +301,7 @@ async function initTaskPage() {
 
         // ডিফল্ট টাস্ক লোড (Task মোড)
         isTaskMode = true;
-        await loadTasksFromAPI('/api/tasks_order/active');
+        await loadTasksFromAPI('/api/tasks');  // ← ✅ সঠিক URL
 
         // বাটনের ডিফল্ট স্টাইল সেট করুন
         const btn = document.getElementById('taskToggleBtn');
@@ -313,8 +313,7 @@ async function initTaskPage() {
     } catch (err) {
         console.log("Init Error", err);
     }
-}
-
+    }
 
     // ========== POST VIEW TASK ==========
 function startPostViewTask(taskId, link, duration) {
