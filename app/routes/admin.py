@@ -528,11 +528,13 @@ def admin_delete_task():
     else:
         return jsonify({"error": "Task not found"}), 404
 
+
+# ✅ এই ফাংশনটি রাখুন (নতুন)
 @admin_bp.route('/api/admin/tasks/create', methods=['POST'])
 @admin_required
 def create_task():
     data = request.json
-    
+
     task_data = {
         "task_id": f"task_{int(datetime.utcnow().timestamp())}",
         "title": data.get("title"),
@@ -550,7 +552,7 @@ def create_task():
         "ip_check": data.get("verification", {}).get("ip_check", False),
         "account_check": data.get("verification", {}).get("account_check", True),
     }
-    
+
     if data.get("type") == "post_view":
         task_data.update({
             "view_duration": int(data.get("view_duration", 30)),
@@ -568,10 +570,11 @@ def create_task():
             "channel_username": data.get("link", ""),
             "description": data.get("description", "চ্যানেল জয়েন করুন"),
         })
-    
+
     db_mongo["tasks"].insert_one(task_data)
-    
+
     return jsonify({"success": True, "task_id": task_data["task_id"], "message": "✅ টাস্ক তৈরি হয়েছে!"})
+
 
 @admin_bp.route('/api/admin/tasks/toggle/<task_id>', methods=["POST"])
 def admin_tasks_toggle(task_id):
