@@ -8,7 +8,7 @@ from app.utils.decorators import admin_required, login_required
 from app.utils.helpers import get_admin_config, update_total_users, run_async
 from app.services.telegram_service import send_telegram_message
 
-admin_bp = Blueprint('admin', __name__)
+admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
 # ================= PAGE ROUTES =================
 @admin_bp.route('/')
