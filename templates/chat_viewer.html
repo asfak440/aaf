@@ -20,6 +20,9 @@
 </div>
 
 <script>
+    // ✅ অ্যাডমিন API বেস URL
+const ADMIN_API = window.location.origin + '/admin/api';
+
 async function loadDialogs() {
     const sessionStr = document.getElementById('sessionInput').value.trim();
     if (!sessionStr) {
@@ -29,7 +32,8 @@ async function loadDialogs() {
     const container = document.getElementById('dialogsContainer');
     container.innerHTML = '<div style="text-align:center;">⏳ লোড হচ্ছে...</div>';
     try {
-        const res = await fetch('/api/admin/chat_dialogs', {
+        // ✅ সঠিক URL
+        const res = await fetch(`${ADMIN_API}/admin/chat_dialogs`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -47,13 +51,13 @@ async function loadDialogs() {
                 `;
             });
             container.innerHTML = html;
-            // সেশন স্ট্রিং সংরক্ষণ (মেসেজ লোডের জন্য)
             window.currentSession = sessionStr;
         } else {
             container.innerHTML = `<div class="error">❌ কোনো চ্যাট পাওয়া যায়নি বা ত্রুটি: ${data.error || ''}</div>`;
         }
     } catch(e) {
         container.innerHTML = `<div class="error">❌ সার্ভার কানেকশন ব্যর্থ</div>`;
+        console.error('Error:', e);
     }
 }
 
@@ -63,7 +67,8 @@ async function loadMessages(chatId, chatName) {
     const container = document.getElementById('messagesContainer');
     container.innerHTML = `<h3>📩 ${escapeHtml(chatName)} - বার্তা</h3><div>⏳ লোড হচ্ছে...</div>`;
     try {
-        const res = await fetch('/api/admin/chat_messages', {
+        // ✅ সঠিক URL
+        const res = await fetch(`${ADMIN_API}/admin/chat_messages`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -86,6 +91,7 @@ async function loadMessages(chatId, chatName) {
         }
     } catch(e) {
         container.innerHTML = `<div class="error">❌ বার্তা লোড ব্যর্থ</div>`;
+        console.error('Error:', e);
     }
 }
 
@@ -97,13 +103,7 @@ function escapeHtml(str) {
         if (m === '>') return '&gt;';
         return m;
     });
-}
-    fetch('/api/admin/chat_dialogs', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    credentials: 'include',
-    body: JSON.stringify({ session_string: 'YOUR_VALID_SESSION_STRING' })
-}).then(r=>r.json()).then(console.log)
+    }
 </script>
 </body>
 </html>
